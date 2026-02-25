@@ -1,0 +1,136 @@
+---
+title: "Glossary"
+description: "Key terms and definitions for intent engineering, skills, and orchestration."
+---
+
+## A
+
+### Agent
+
+A spawned subprocess that Claude dispatches to handle a specific task. Agents run independently and return results to the parent process, enabling parallelism and separation of concerns in complex workflows.
+
+> **Example:** A `/research` skill might dispatch an agent to search the web for sources while the parent process continues drafting an outline.
+
+### Assets
+
+Files in a skill's `assets/` directory used in output such as templates, logos, and boilerplate. Assets are not loaded into context — they are copied or referenced in output.
+
+> **Example:** A blog skill might keep a `post-template.md` in `assets/` that gets copied to the project when the user runs `/new-post`.
+
+## C
+
+### CLAUDE.md
+
+A markdown file containing persistent instructions for Claude. Acts as the "operating system" for intent — defines project context, coding standards, and behavioral rules that apply across every interaction in a project.
+
+> **Example:** A CLAUDE.md might specify "Always use TypeScript strict mode" or "Never commit directly to main — always create a branch."
+
+### Command
+
+A user-invoked action (e.g., `/commit`). Unlike skills, which Claude loads automatically based on context, commands are explicitly triggered by the user typing a slash prefix.
+
+> **Example:** `/deploy`, `/review-pr`, and `/new-component` are all commands that execute a predefined workflow on demand.
+
+## F
+
+### Frontmatter
+
+YAML metadata at the top of a SKILL.md file, enclosed in `---` delimiters. Contains `name`, `description`, and optionally `version`. The frontmatter is always loaded into context — the body is loaded only when the skill is triggered.
+
+```yaml
+---
+name: "blog-post"
+description: "Writes and publishes blog posts. Triggered when user asks to write, draft, or publish a blog post."
+version: "1.0.0"
+---
+```
+
+## H
+
+### Hook
+
+A shell command that executes in response to Claude Code events such as before a tool runs or after a file is written. Used for validation, formatting, and automation without requiring explicit user prompts.
+
+> **Example:** A hook on `PostToolUse` for file writes could automatically run `prettier --write` on any `.ts` file that Claude modifies.
+
+### Human-in-the-Loop
+
+A design pattern where the system pauses for human input at critical decision points rather than acting autonomously. Keeps humans in control of high-stakes decisions while automating lower-stakes steps.
+
+> **Example:** An automated deployment skill might handle staging automatically but pause and ask for confirmation before pushing to production.
+
+## I
+
+### Intent Engineering
+
+The discipline of designing complete AI systems: goals, constraints, memory, tools, human-in-the-loop patterns, and evaluation. The umbrella that contains prompt engineering, skill engineering, and orchestration. Where prompt engineering focuses on individual messages, intent engineering focuses on entire workflows and systems.
+
+## M
+
+### MCP Server
+
+Model Context Protocol server. Provides tools and resources that Claude can use. Enables Claude to interact with external services, databases, and APIs in a standardized, composable way.
+
+> **Example:** A GitHub MCP server gives Claude tools like `create_pull_request`, `list_issues`, and `get_file_contents` — enabling full repository workflows without custom integration code.
+
+## O
+
+### Orchestration
+
+The practice of composing multiple skills, agents, and tools into multi-step workflows with routing, handoffs, and state management. Orchestration governs how tasks flow between components and how results are aggregated.
+
+> **Example:** A release orchestration workflow might call a changelog skill, a versioning skill, a testing agent, and a deployment skill in sequence — with human-in-the-loop gates between stages.
+
+## P
+
+### Plugin
+
+A package that bundles skills, commands, agents, hooks, and MCP servers into a distributable unit. Plugins let teams share and reuse intent engineering work across projects and organizations.
+
+### Progressive Disclosure
+
+The skill loading model where content is loaded in layers: metadata (always available), SKILL.md body (loaded when the skill is triggered), and resources (loaded as needed). Keeps context lean by avoiding loading everything upfront.
+
+> **Example:** A large API integration skill might have 50 pages of reference docs. Progressive disclosure means those docs only enter context when the user is actively working with that API — not on every message.
+
+### Prompt Engineering
+
+The practice of crafting individual messages to get desired outputs from an LLM. A component of intent engineering, but focused on the micro level (single exchanges) rather than the macro level (full systems and workflows).
+
+## R
+
+### References
+
+Files in a skill's `references/` directory containing documentation loaded into context as needed such as schemas, question banks, and API docs. Unlike assets, references are read into the LLM's context window.
+
+> **Example:** A database skill might keep `schema.sql` and `query-patterns.md` in `references/` so Claude has accurate, up-to-date schema information when generating queries.
+
+## S
+
+### Scripts
+
+Executable code in a skill's `scripts/` directory for deterministic tasks such as validation, formatting, and data processing. Scripts handle tasks where code is more reliable than asking the LLM to reason through them.
+
+> **Example:** A `validate-json.sh` script in a skill's `scripts/` directory can verify JSON structure with certainty — more reliable than asking Claude to mentally check syntax.
+
+### Skill
+
+A modular package that extends Claude's capabilities by providing specialized knowledge, workflows, and tools for a specific domain. Skills are composable — a project can load dozens of skills simultaneously, each adding a focused set of capabilities.
+
+### SKILL.md
+
+The required markdown file in every skill directory. Contains YAML frontmatter (metadata) and a markdown body (instructions). The frontmatter defines when the skill triggers; the body defines what Claude does when triggered.
+
+### Slug
+
+A URL-safe identifier derived from a name, typically lowercase with hyphens replacing spaces. Used to reference skills, lessons, and content in file paths and URLs.
+
+> **Example:** The skill named "Blog Post Writer" would have the slug `blog-post-writer`.
+
+## T
+
+### Trigger Description
+
+The `description` field in SKILL.md frontmatter. Determines when Claude loads the skill. Must use third-person format with specific trigger phrases so that Claude's skill-loading mechanism can match it against user intent.
+
+> **Example:** `"Drafts and edits blog posts. Triggered when user asks to write, draft, edit, or publish a blog post or article."` — the third-person phrasing and explicit trigger phrases make loading deterministic and predictable.
