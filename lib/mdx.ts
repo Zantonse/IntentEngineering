@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import { compileMDX } from "next-mdx-remote/rsc";
 import rehypePrettyCode from "rehype-pretty-code";
 import React from "react";
+import { SkillAnatomyExplorer } from "@/components/interactive/SkillAnatomyExplorer";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -180,5 +181,6 @@ function getMDXComponents() {
         className: "font-semibold text-text-primary",
         ...props,
       }),
+    SkillAnatomyExplorer,
   };
 }
