@@ -1,0 +1,48 @@
+export const MODULE_META = {
+  foundations: {
+    title: "Foundations",
+    subtitle: "What Are Skills?",
+    description: "Understand what skills are, how they work, and why they exist.",
+    color: "var(--color-mod-foundations)",
+    colorClass: "text-electric-500",
+    bgClass: "bg-electric-500",
+    icon: "puzzle",
+    slug: "foundations",
+    order: 1,
+  },
+  "building-skills": {
+    title: "Building Skills",
+    subtitle: "From Idea to Skill",
+    description: "Learn the 6-step process for creating effective skills.",
+    color: "var(--color-mod-building)",
+    colorClass: "text-mod-building",
+    bgClass: "bg-mod-building",
+    icon: "wrench",
+    slug: "building-skills",
+    order: 2,
+  },
+  orchestration: {
+    title: "Orchestration",
+    subtitle: "Composing Skills Into Workflows",
+    description: "Chain skills together with routing, handoffs, and state management.",
+    color: "var(--color-mod-orchestration)",
+    colorClass: "text-amber-500",
+    bgClass: "bg-amber-500",
+    icon: "flow",
+    slug: "orchestration",
+    order: 3,
+  },
+  "intent-engineering": {
+    title: "Intent Engineering",
+    subtitle: "Designing the Full System",
+    description: "Design complete intent systems with goals, constraints, memory, and evaluation.",
+    color: "var(--color-mod-intent)",
+    colorClass: "text-mod-intent",
+    bgClass: "bg-mod-intent",
+    icon: "compass",
+    slug: "intent-engineering",
+    order: 4,
+  },
+} as const;
+
+export type ModuleSlug = keyof typeof MODULE_META;
