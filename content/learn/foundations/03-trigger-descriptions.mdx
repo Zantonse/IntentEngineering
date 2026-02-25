@@ -1,0 +1,178 @@
+---
+title: "Trigger Descriptions"
+description: "Writing effective trigger descriptions — the most important part of any skill, and the key to making your skills fire when they should."
+order: 3
+module: "foundations"
+---
+
+## The Gate That Everything Else Depends On
+
+You could write the most thorough discovery workflow ever committed to a SKILL.md file. You could have a 2,000-word process, a 500-question reference bank, and perfectly formatted output scripts. And it would be completely useless if the trigger description doesn't match when your SE types their request.
+
+The description field in your frontmatter is evaluated before anything else. Claude scans all available skill descriptions, compares them to the user's request, and decides which skill — if any — is relevant enough to load. If nothing matches, no skill loads. Claude answers from its general knowledge, and all that careful domain work sits idle.
+
+This is why the description is the most important field you'll write. Not the most technically interesting — but the most consequential.
+
+## Anatomy of a Good Description
+
+A good trigger description has three elements:
+
+**Third-person format.** Always start with "This skill should be used when the user..." This framing tells Claude how to interpret the description — as a matching rule, not as the skill content itself.
+
+**Specific trigger phrases in quotes.** Include the actual phrases users would type, quoted so Claude treats them as literal matches. "prepare discovery questions" is better than *requests discovery questions* because it reflects how people actually write.
+
+**Coverage of the range.** Think about all the different ways someone might ask for the same thing. "Set up a demo" and "configure a POC" and "customize the demo environment" are all pointing at the same workflow. Your description needs to cover that range.
+
+Here's the template to work from:
+
+```yaml
+description: This skill should be used when the user asks to "[phrase 1]",
+  "[phrase 2]", "[phrase 3]", or mentions [broader context/intent].
+```
+
+## Good vs. Bad — Side by Side
+
+### Discovery Call Preparation
+
+Bad:
+```yaml
+description: Provides guidance for discovery calls.
+```
+
+This is passive ("provides guidance"), vague (what kind of guidance?), and doesn't include any trigger phrases. "Discovery calls" could match a dozen different requests. Claude has no reason to prefer this skill over just answering from its training data.
+
+Good:
+```yaml
+description: This skill should be used when the user asks to "prepare
+  discovery questions", "plan a technical discovery call", "generate
+  questions for a prospect meeting", or mentions understanding
+  customer requirements and technical needs before a call.
+```
+
+Third-person format. Four specific quoted phrases. A broader catch for intent-based requests ("understanding customer requirements"). This fires on the request you want it to fire on.
+
+### Demo Preparation
+
+Bad:
+```yaml
+description: Use this skill for demos.
+```
+
+"Use this skill" is first-person instruction, not a matching rule. "For demos" could mean preparing a demo, running a demo, or writing about demos. Three words of description for what is likely a complex workflow.
+
+Good:
+```yaml
+description: This skill should be used when the user asks to "prepare
+  a demo", "set up a demo environment", "configure a POC", "customize
+  the demo", or mentions tailoring a demonstration to a specific
+  prospect's use case or technical requirements.
+```
+
+Five specific phrases covering the range of how this request gets made. The broader catch at the end handles "I need to customize my demo for Acme Corp's architecture" — a real request that wouldn't match any single phrase.
+
+### RFP Response
+
+Bad:
+```yaml
+description: Helps with RFP responses and technical writing.
+```
+
+"Technical writing" is far too broad — this could trigger on requests that have nothing to do with RFPs. And "helps with" doesn't tell Claude when to choose this skill over any other skill that also "helps with" something.
+
+Good:
+```yaml
+description: This skill should be used when the user asks to "respond
+  to an RFP", "draft the technical section", "answer RFP questions",
+  "complete a security questionnaire", or mentions working on a
+  formal vendor evaluation or procurement document.
+```
+
+The catch at the end ("formal vendor evaluation or procurement document") handles the case where someone pastes an RFP excerpt without saying the word "RFP."
+
+### Post-Call Follow-Up
+
+Bad:
+```yaml
+description: For writing follow-up emails after sales calls.
+```
+
+Better than most examples here — at least it specifies the task. But it misses variants: "summarize the call," "send a recap," "write a follow-up to the discovery." And "sales calls" might not match an SE who thinks of their calls as "technical calls."
+
+Good:
+```yaml
+description: This skill should be used when the user asks to "write
+  a follow-up email", "send a call recap", "summarize the call",
+  "draft a follow-up to the discovery", or mentions documenting
+  next steps and action items after a prospect meeting.
+```
+
+## How to Identify Your Trigger Phrases
+
+The best trigger phrases come from thinking about what you would actually type. Not what sounds correct — what you'd actually type at 8pm before a 9am call tomorrow.
+
+For SE workflows, there are four common phrase patterns:
+
+**Discovery phrases** — What you say when you need to prepare for a call:
+- "prepare questions for..."
+- "what should I ask about..."
+- "help me understand what to cover in..."
+- "discovery prep for..."
+
+**Demo prep phrases** — What you say when you're setting up a demonstration:
+- "set up a demo for..."
+- "customize the demo..."
+- "configure a POC for..."
+- "tailor the demo to..."
+
+**Documentation phrases** — What you say when creating deliverables:
+- "respond to this RFP"
+- "draft the technical section..."
+- "complete the security questionnaire..."
+- "write the requirements doc..."
+
+**Post-meeting phrases** — What you say after a call ends:
+- "write a follow-up to..."
+- "summarize the call..."
+- "recap what we discussed..."
+- "draft next steps for..."
+
+When you're writing a description, generate 8–10 phrases first, then pick the 4–5 that represent the most distinct phrasings. You want coverage, not redundancy.
+
+## Testing Your Triggers
+
+Writing a description is only half the job. You need to verify it actually fires — and that it doesn't fire when it shouldn't.
+
+**Positive testing** — Try the phrases you think should trigger it:
+- Type each phrase from your description into Claude
+- Confirm the skill loads (you'll see it in the context or behavior)
+- Try slight variations: singular vs. plural, different verb forms, shorter requests
+
+**Negative testing** — Try phrases that should *not* trigger it:
+- If you have a discovery skill, try "write a demo script" — the demo prep skill should load, not discovery
+- If you have a follow-up email skill, try "draft a cold outreach email" — this is a different workflow and shouldn't match
+- Try adjacent requests that might accidentally match
+
+The failure modes to watch for:
+- **Too narrow** — Your exact phrases trigger correctly, but real-world variations don't. Fix by adding more phrases and a broader intent catch at the end.
+- **Too broad** — The description matches things it shouldn't, and the skill loads when it's not relevant. Fix by making trigger phrases more specific and removing vague catch-all language.
+- **Duplicate coverage** — Two skills have overlapping descriptions, and Claude picks the wrong one. Fix by making each skill's scope distinct and non-overlapping.
+
+## Exercise
+
+Write a trigger description for a skill that helps SEs prepare demo environments.
+
+Before writing, answer these questions:
+
+1. **What would you actually type?** Not what sounds right — what would you type at 8pm before a 9am demo? Write down 5–8 phrases.
+
+2. **What are the different contexts?** Preparing a fresh demo environment vs. customizing an existing one vs. troubleshooting a broken one vs. resetting to a clean state. Do these all belong in one skill?
+
+3. **What should NOT trigger this skill?** "Run the demo" is different from "set up the demo." "Troubleshoot the demo" might be a different skill entirely. Where are the boundaries?
+
+4. **What's the broader intent?** Someone might not say "demo environment" — they might say "get a POC ready" or "set up a trial instance." How do you catch that without being too broad?
+
+Write the description, then test it against both the phrases that should trigger it and the phrases that shouldn't.
+
+---
+
+You now have the foundations. You understand what skills are, how they're structured, and how trigger descriptions determine whether they fire. In the next module, we'll move from understanding to building — walking through the six-step process for creating your first skill from scratch.

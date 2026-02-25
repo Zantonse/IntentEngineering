@@ -1,0 +1,159 @@
+---
+title: "Anatomy of a Skill"
+description: "Breaking down the structure of a SKILL.md file — frontmatter, body, resources, and the rules for writing effective skills."
+order: 2
+module: "foundations"
+---
+
+## The SKILL.md File
+
+Every skill lives in its own directory, and every skill directory requires exactly one file: `SKILL.md`. This is the heart of the skill — the file Claude reads when it decides to use this skill on a task.
+
+SKILL.md has two parts: a YAML frontmatter block at the top, and a markdown body below. They serve different purposes and have different rules.
+
+## The Frontmatter
+
+The frontmatter is a YAML block at the top of the file, wrapped in `---` delimiters. It contains metadata that Claude reads at the skill-selection level — before loading the body.
+
+```yaml
+---
+name: discovery-questions
+description: This skill should be used when the user asks to "prepare
+  discovery questions", "plan a technical discovery call", "generate
+  questions for a prospect meeting", or mentions understanding
+  customer requirements and technical needs.
+version: 0.1.0
+---
+```
+
+**`name`** — The identifier for the skill. Use lowercase with hyphens. This is how you reference the skill in logs, orchestration configs, and conversation when debugging.
+
+**`description`** — The most important field in the entire SKILL.md file. This is the trigger logic. Claude reads every skill's description when deciding what to load for a request. If the description matches the user's intent, the full skill body loads. If it doesn't match, the skill is ignored entirely.
+
+A perfect skill body with a bad description does nothing. The user asks for help preparing discovery questions. Claude scans the descriptions. None of them match closely enough. No skill loads. Claude answers generically. The description is the gate.
+
+We'll cover trigger descriptions in detail in the next lesson. For now, know that it must use third-person format ("This skill should be used when...") and include specific phrases users would actually type.
+
+**`version`** — Optional but recommended. Use semantic versioning (`0.1.0`, `1.0.0`). When you update a skill's core workflow, bump the version so you can track what changed.
+
+## The Body
+
+Everything after the frontmatter block is the skill body — the actual domain knowledge and workflow instructions Claude follows when the skill activates.
+
+The body is written in imperative form: short, direct commands that tell Claude what to do. Think of it as writing instructions for a capable colleague who needs to know the process, not someone who needs hand-holding.
+
+**Imperative form means:**
+- "Gather prospect context" — not "You should gather prospect context"
+- "Identify the capabilities being evaluated" — not "It would be helpful to identify..."
+- "Generate questions organized by category" — not "Questions can be organized by category"
+
+This matters because Claude reads the skill body as operating instructions. Declarative language introduces ambiguity about whether something is required or optional. Imperative language is unambiguous.
+
+A typical SKILL.md body covers four areas:
+
+**Purpose statement** — One short paragraph explaining what this skill does and why. This orients Claude immediately.
+
+**Activation conditions** — When should this skill apply? This supplements the frontmatter description with nuance about specific scenarios. "This skill applies when preparing for initial discovery calls, deep-dive technical sessions, or pre-demo qualification conversations."
+
+**Core process** — The numbered workflow steps. This is the heart of the skill. Each step should be specific enough that Claude knows what to do, but not so granular that it can't adapt to variation.
+
+**Resource references** — Pointers to files in `references/`, `scripts/`, and `assets/`. Tell Claude what's available and when to use it.
+
+Target 1,500–2,000 words for the body. Less than that, and you're probably missing important workflow detail. More than that, and you're crowding the context window and making the skill harder to maintain.
+
+## Explore the Anatomy
+
+Explore the anatomy of a real SE skill below — click on any section to learn what it does:
+
+<SkillAnatomyExplorer />
+
+## The Resource Directories
+
+The SKILL.md body stays lean so it loads fast. The detail lives in three optional directories alongside the SKILL.md file.
+
+### `references/`
+
+Reference files are documentation that Claude loads when it needs specific information. They don't load automatically — Claude pulls them in when the task requires it.
+
+Good candidates for `references/`:
+- A full question bank (500+ categorized discovery questions — too long for SKILL.md)
+- Industry-specific templates (finance, healthcare, manufacturing, etc.)
+- Policy documents or compliance requirements
+- Competitive positioning guides
+- Integration documentation for common customer stacks
+
+The key: these are *reference* documents. Claude reads them to get specific information. They're not workflow steps — those go in SKILL.md.
+
+### `scripts/`
+
+Scripts are executable code that Claude can run to handle deterministic tasks. Formatting, validation, data transformation — anything where you want consistent, reproducible output rather than AI generation.
+
+Good candidates for `scripts/`:
+- `format-questions.sh` — Takes generated questions and formats them as a structured call prep document
+- `validate-requirements.py` — Checks that all required fields are present in a requirements doc
+- `export-summary.sh` — Formats a discovery summary as a specific template your team uses
+
+Scripts are best for tasks where the *process* is deterministic even if the *inputs* vary. If the output format should always look the same, put it in a script.
+
+### `assets/`
+
+Assets are files Claude uses as templates, references, or starting points for output. Unlike `references/`, assets are often used directly in the output — filled in, customized, or attached.
+
+Good candidates for `assets/`:
+- `call-prep-template.md` — The standard template for a call prep document
+- `email-templates/` — Boilerplate structures for follow-up emails
+- `slides-starter.pptx` — A PowerPoint template for demo presentations
+- `requirements-template.docx` — The standard requirements gathering document
+
+Assets give output consistency. Instead of Claude generating a format from scratch each time, it starts from a known template that matches your team's standards.
+
+## Writing Style Rules
+
+The rules for SKILL.md body content:
+
+**Imperative form.** Every process step is a command. "Gather," "identify," "generate," "review," "confirm." Not "you should gather" or "it's important to identify."
+
+**Third-person description.** The frontmatter description uses third-person ("This skill should be used when..."). The body is imperative but may reference "the user" or "the prospect" rather than "you."
+
+**Objective language.** Don't write "create a compelling email." Write "create an email that summarizes the key technical requirements discussed and confirms next steps." Specific and verifiable beats vague and aspirational.
+
+**Here are clear examples:**
+
+Bad — Weak and ambiguous:
+```
+You should probably start by getting some background on the prospect.
+Try to understand what they're looking for.
+```
+
+Good — Imperative and specific:
+```
+1. Gather prospect context: company name, industry, size, current tech stack
+2. Identify the specific product capabilities being evaluated
+3. Note any known pain points or constraints from previous conversations
+```
+
+Bad — Vague outcome:
+```
+Generate thoughtful discovery questions tailored to the prospect.
+```
+
+Good — Specific and actionable:
+```
+Generate 15–20 discovery questions organized into four categories:
+- Current state (what they have now, what's working, what isn't)
+- Technical requirements (integrations, scale, compliance needs)
+- Decision criteria (what success looks like, who decides, timeline)
+- Competitive landscape (what else they're evaluating, why)
+```
+
+The difference in both cases: the "good" version tells Claude exactly what to produce. The "bad" version leaves it to inference.
+
+## Putting It Together
+
+A well-structured SKILL.md file is short, specific, and complete. It answers three questions:
+
+1. **When does this skill apply?** (frontmatter description + activation conditions)
+2. **What should Claude do?** (core process steps)
+3. **What resources are available?** (references to the directories)
+
+In the next lesson, we'll go deep on trigger descriptions — the single most important thing you'll write in any skill file.

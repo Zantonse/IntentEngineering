@@ -5,19 +5,84 @@ order: 1
 module: "foundations"
 ---
 
-# What Are Skills?
+## The Problem With General-Purpose AI
 
-Skills are the building blocks of intent engineering. This is a placeholder — full content coming in Task 8.
+Claude is remarkably capable out of the box. You can ask it to draft an email, summarize a document, or explain a technical concept — and it does a decent job. But "decent" is the ceiling when you're working without context.
 
-## Example Code Block
+Think about what happens when a new hire joins your SE team. They're smart. They've passed interviews. But on their first discovery call, they don't know your product's most common objections, your prospect's industry pain points, or the specific questions that have worked in the past. They're capable, but not yet effective.
 
-```yaml
----
-name: example-skill
-description: This skill should be used when...
----
+That's Claude without skills.
+
+Skills solve this by encoding the institutional knowledge that makes someone effective in a specific role. Instead of explaining the context every time, you package it once — the right questions to ask, the right workflow to follow, the right resources to reference — and Claude picks it up automatically when it's needed.
+
+**A skill is a packaged domain workflow.** It's the difference between Claude as a general-purpose assistant and Claude as your specialized SE copilot.
+
+## The Intent Engineering Hierarchy
+
+Skills don't exist in a vacuum. They're one layer in a broader framework called intent engineering — the discipline of designing AI systems that consistently do what you actually want.
+
+Here's how the layers build on each other:
+
+**Layer 1 — Prompt Engineering**
+Crafting individual messages to get better outputs. You've probably done this already — adding context, specifying format, asking for step-by-step reasoning. This is the foundation, but it's ephemeral. Each conversation starts fresh.
+
+**Layer 2 — Skill Engineering**
+Packaging domain knowledge and workflows so Claude can load them automatically. Instead of re-explaining your discovery process every session, you write it once and it's always available. This is where most SEs will spend most of their time — and it's what this module covers.
+
+**Layer 3 — Orchestration**
+Composing multiple skills with routing logic and shared state. A prospect arrives, Claude identifies the stage they're in, routes to the right skill, and passes context forward to the next step. This is where individual skills become complete workflows.
+
+**Layer 4 — Intent Engineering**
+Full system design: goals, constraints, memory management, tool use, evaluation loops. This is the architectural level — designing systems that stay aligned with what you want over time, even as tasks get complex.
+
+This module covers Layers 1 and 2. You'll understand what skills are and how to write them. Later modules cover the rest.
+
+## How Skills Actually Work: Progressive Disclosure
+
+Here's something important about how Claude manages context: there's a limit to how much it can hold at once. Load too much, and either performance degrades or you hit limits entirely. Load too little, and Claude doesn't have what it needs.
+
+Skills solve this with a three-layer loading model:
+
+**Layer 1 — Metadata (always in context)**
+Every skill has a name and a description. These are always loaded, regardless of what's happening in the conversation. They're short — about 100 words per skill — so even if you have 20 skills registered, the metadata overhead is manageable. The description is what tells Claude *when* to load the rest of the skill.
+
+**Layer 2 — SKILL.md body (loads on trigger)**
+When a skill's description matches the user's request, the full skill body loads. This is the domain knowledge, the workflow, the process steps. You target 1,500–2,000 words here — enough to be comprehensive, not so much that it crowds out everything else.
+
+**Layer 3 — References, scripts, assets (loaded as needed)**
+The detailed stuff — question banks, templates, schemas, executable scripts — lives outside the SKILL.md file. Claude pulls these in when the task specifically requires them. A 5,000-word question library only enters the context window if Claude actually needs specific questions.
+
+Here's what a typical skill directory looks like:
+
+```
+skills/
+└── discovery-questions/
+    ├── SKILL.md          ← Layer 2: the workflow
+    ├── references/
+    │   ├── question-bank.md    ← detailed question library
+    │   └── industries.md       ← industry-specific templates
+    ├── scripts/
+    │   └── format-questions.sh ← formats output for call prep
+    └── assets/
+        └── call-prep-template.md ← output template
 ```
 
-> This is a blockquote to test styling.
+This structure is deliberate. SKILL.md stays lean so it loads fast and doesn't crowd context. The heavy content lives in `references/` and only comes in when it's actually needed.
 
-Here is some **bold text** and `inline code` to verify the MDX component overrides work.
+## Why This Matters for Sales Engineers
+
+SE work is full of recurring high-stakes tasks that benefit enormously from consistent process:
+
+**Discovery calls.** Every good discovery call covers the same categories — current state, pain points, technical requirements, decision criteria. But without a skill, you're either running off memory or copying notes from a previous call. With a skill, your discovery framework loads automatically when you type "help me prep for this call."
+
+**Demo preparation.** A great demo is tailored to the prospect's specific use case. That means knowing their stack, their pain points, and the capabilities they care most about. A demo prep skill packages the checklist for gathering that context and the framework for customizing the narrative.
+
+**RFP responses.** RFPs are repetitive but consequential. The same technical sections appear over and over, but each answer needs to be accurate for your current product. A skill can encode the standard sections, the common questions, and the places where boilerplate ends and custom content begins.
+
+**Follow-up emails.** After a call, you need to summarize what you heard, confirm next steps, and reinforce key points. A skill can encode the structure that makes follow-ups effective without taking 30 minutes to write each one.
+
+The pattern is the same in each case: there's institutional knowledge about how to do this well, and that knowledge currently lives in someone's head — or nowhere at all. Skills make it persistent, consistent, and accessible.
+
+> Skills aren't about making Claude smarter. They're about making it more effective at *your* specific work — the kind of specialized, repeatable, high-value tasks that define what it means to be a good SE.
+
+In the next lesson, we'll look at exactly what goes inside a SKILL.md file — the frontmatter, the body structure, and the resource directories.
