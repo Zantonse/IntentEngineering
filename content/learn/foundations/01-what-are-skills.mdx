@@ -15,11 +15,15 @@ That's Claude without skills.
 
 Skills solve this by encoding the institutional knowledge that makes someone effective in a specific role. Instead of explaining the context every time, you package it once — the right questions to ask, the right workflow to follow, the right resources to reference — and Claude picks it up automatically when it's needed.
 
-**A skill is a packaged domain workflow.** It's the difference between Claude as a general-purpose assistant and Claude as your specialized SE copilot.
+**A skill is a packaged domain workflow.** It's the difference between Claude as a general-purpose assistant and Claude as your specialized SE agent — one that knows your discovery process, your demo structure, and your RFP playbook without being told every time.
+
+<Callout type="key">
+A skill is a packaged domain workflow. It's the difference between Claude as a general-purpose assistant and Claude as your specialized SE agent.
+</Callout>
 
 ## The Intent Engineering Hierarchy
 
-Skills don't exist in a vacuum. They're one layer in a broader framework called intent engineering — the discipline of designing AI systems that consistently do what you actually want.
+Skills don't exist in a vacuum. They're one layer in a broader framework for building a specialized agent — the discipline of designing AI systems that consistently do what you actually want.
 
 Here's how the layers build on each other:
 
@@ -27,13 +31,13 @@ Here's how the layers build on each other:
 Crafting individual messages to get better outputs. You've probably done this already — adding context, specifying format, asking for step-by-step reasoning. This is the foundation, but it's ephemeral. Each conversation starts fresh.
 
 **Layer 2 — Skill Engineering**
-Packaging domain knowledge and workflows so Claude can load them automatically. Instead of re-explaining your discovery process every session, you write it once and it's always available. This is where most SEs will spend most of their time — and it's what this module covers.
+Your agent's domain expertise — packaging knowledge and workflows so it loads them automatically. Instead of re-explaining your discovery process every session, you encode it once and your agent applies it whenever the task matches. This is where most SEs will spend most of their time — and it's what this module covers.
 
 **Layer 3 — Orchestration**
-Composing multiple skills with routing logic and shared state. A prospect arrives, Claude identifies the stage they're in, routes to the right skill, and passes context forward to the next step. This is where individual skills become complete workflows.
+Your agent's autonomy — composing multiple skills with routing logic and shared state. A prospect arrives, your agent identifies the stage they're in, routes to the right skill, and passes context forward to the next step. This is where individual skills become an agent that acts, not just responds.
 
 **Layer 4 — Intent Engineering**
-Full system design: goals, constraints, memory management, tool use, evaluation loops. This is the architectural level — designing systems that stay aligned with what you want over time, even as tasks get complex.
+Full system design: goals, constraints, memory management, tool use, evaluation loops. This is where your SE agent becomes deployable — aligned with what you want, accountable to measurable outcomes, and robust enough to handle real work.
 
 This module covers Layers 1 and 2. You'll understand what skills are and how to write them. Later modules cover the rest.
 
@@ -44,15 +48,19 @@ Here's something important about how Claude manages context: there's a limit to 
 Skills solve this with a three-layer loading model:
 
 **Layer 1 — Metadata (always in context)**
-Every skill has a name and a description. These are always loaded, regardless of what's happening in the conversation. They're short — about 100 words per skill — so even if you have 20 skills registered, the metadata overhead is manageable. The description is what tells Claude *when* to load the rest of the skill.
+Every skill has a name and a description. These are always loaded, regardless of what's happening in the conversation. They're short — about 100 tokens per skill — so even if you have 20 skills registered, the metadata overhead is manageable. The description is what tells Claude *when* to load the rest of the skill.
 
 **Layer 2 — SKILL.md body (loads on trigger)**
-When a skill's description matches the user's request, the full skill body loads. This is the domain knowledge, the workflow, the process steps. You target 1,500–2,000 words here — enough to be comprehensive, not so much that it crowds out everything else.
+When a skill's description matches the user's request, the full skill body loads. This is the domain knowledge, the workflow, the process steps. You target under 500 lines and under 5,000 tokens here (the recommended ceiling to prevent context bloat) — enough to be comprehensive, not so much that it crowds out everything else.
 
 **Layer 3 — References, scripts, assets (loaded as needed)**
 The detailed stuff — question banks, templates, schemas, executable scripts — lives outside the SKILL.md file. Claude pulls these in when the task specifically requires them. A 5,000-word question library only enters the context window if Claude actually needs specific questions.
 
-Here's what a typical skill directory looks like:
+<Callout type="warning">
+Keep SKILL.md under 500 lines and 5,000 tokens. Heavy reference content (question banks, templates, schemas) belongs in the `references/` directory, not the skill body.
+</Callout>
+
+<Details title="Example: Skill Directory Structure">
 
 ```
 skills/
@@ -69,6 +77,20 @@ skills/
 
 This structure is deliberate. SKILL.md stays lean so it loads fast and doesn't crowd context. The heavy content lives in `references/` and only comes in when it's actually needed.
 
+</Details>
+
+<KnowledgeCheck
+  question="In the progressive disclosure model, what determines when a skill's full body loads into context?"
+  options={[
+    "The skill always loads its full body on every message",
+    "The skill's trigger description matches the user's request",
+    "The user manually selects which skills to load",
+    "Skills load alphabetically until context is full"
+  ]}
+  correct={1}
+  explanation="The skill's description (in frontmatter) is always in context. When it matches the user's intent, the full body loads. This is why writing precise trigger descriptions matters — it controls when the rest of the skill enters the context window."
+/>
+
 ## Why This Matters for Sales Engineers
 
 SE work is full of recurring high-stakes tasks that benefit enormously from consistent process:
@@ -83,6 +105,22 @@ SE work is full of recurring high-stakes tasks that benefit enormously from cons
 
 The pattern is the same in each case: there's institutional knowledge about how to do this well, and that knowledge currently lives in someone's head — or nowhere at all. Skills make it persistent, consistent, and accessible.
 
-> Skills aren't about making Claude smarter. They're about making it more effective at *your* specific work — the kind of specialized, repeatable, high-value tasks that define what it means to be a good SE.
+<Callout type="key">
+Skills aren't about making Claude smarter. They're about turning it into your agent — one that's effective at *your* specific work, the kind of specialized, repeatable, high-value tasks that define what it means to be a good SE.
+</Callout>
+
+<KeyTakeaways items={[
+  "Skills are packaged domain workflows that turn Claude from a general assistant into a specialized SE agent",
+  "Intent engineering has 4 layers: prompts → skills → orchestration → full system design",
+  "Progressive disclosure loads skills in 3 layers: metadata (always) → body (on trigger) → references (as needed)",
+  "Keep SKILL.md lean — heavy content goes in references/"
+]} />
+
+<SelfAssessment items={[
+  "I can explain what a skill is and why it matters for SE work",
+  "I can describe the four layers of the intent engineering hierarchy",
+  "I can explain the three-layer progressive disclosure model",
+  "I understand why SKILL.md should stay lean and what goes in references/"
+]} />
 
 In the next lesson, we'll look at exactly what goes inside a SKILL.md file — the frontmatter, the body structure, and the resource directories.
