@@ -1,0 +1,173 @@
+---
+title: "Testing and Iterating"
+description: "How to test skills systematically, diagnose common failures, and iterate toward reliability — the feedback loop that makes skills production-ready."
+order: 4
+module: "building-skills"
+---
+
+Building a skill is the first step. Trusting it is a different problem entirely. A skill that fires at the wrong time, produces generic output, or drifts out of scope isn't just useless — it erodes confidence in the whole system. This lesson gives you a systematic approach to testing before you deploy and iterating after you do.
+
+## The Three Tests
+
+Every skill needs three tests before you can rely on it in production work. Skip any of them and you're flying blind.
+
+<Callout type="key">
+The three tests — trigger, quality, and boundary — each catch a different failure mode. Skipping even one leaves a blind spot that will surface at the worst possible time: during real work with a real customer on the line.
+</Callout>
+
+### The Trigger Test
+
+Does the skill fire on the right phrases — and, crucially, does it stay silent on unrelated ones?
+
+Test three categories of input:
+
+- **Exact phrases** from your trigger description
+- **Paraphrases** — natural language variations a real user might type
+- **Edge cases** — requests that are related but different enough that the skill should not fire
+
+For a `discovery-questions` skill, that looks like:
+
+- "prepare questions for my call with Acme" — should fire
+- "help me prep for a technical discovery" — should fire
+- "write a cold outreach email" — should NOT fire
+
+**If the skill doesn't fire:** the trigger description is too specific or missing the phrases users naturally reach for. Add more quoted examples that reflect how people actually talk.
+
+**If it fires on unrelated requests:** the trigger is too broad. Add specificity — phrases like "specifically for" or "in the context of" narrow the scope without sacrificing coverage.
+
+### The Quality Test
+
+Is the output good enough to send with minor edits? The bar isn't perfection. It's "better than starting from scratch."
+
+Run the skill three times with meaningfully different inputs — different prospects, different industries, different deal stages. For each run, check:
+
+- Does it follow the process steps in order?
+- Does it use reference material when appropriate?
+- Is the output specific to the input, or does it feel like it could apply to any customer?
+- Would you need to rewrite it, or just tweak a few lines?
+
+**If the output is generic:** your process steps are too vague. "Gather context" tells Claude almost nothing. "Gather prospect context: company name, industry, size, and current tech stack" produces something usable.
+
+**If it misses key elements:** your process is incomplete. Add the missing steps explicitly — don't assume Claude will infer them.
+
+**If output is inconsistent between runs:** your process has ambiguous steps. Make every instruction unambiguous. Describe the expected output format, not just the expected action.
+
+<Callout type="tip">
+Test on hard cases, not easy ones. A discovery call skill that works for a clean SaaS deal and fails on a messy financial services prospect with partial CRM data is not ready. The edge cases in your real pipeline — unusual industries, sparse information, multi-stakeholder calls — are exactly where a skill earns its keep or breaks down.
+</Callout>
+
+### The Boundary Test
+
+Does the skill stay in its lane? A well-scoped skill does one thing completely rather than multiple things partially.
+
+Watch for scope creep during your quality tests:
+
+- The skill starts drafting follow-up emails when you asked it to prepare discovery questions
+- It generates a full proposal when you asked it to parse RFP requirements
+- It tries to update the CRM when you asked for a post-call summary
+
+**If the skill overreaches:** tighten the process steps and add explicit boundary statements. A line like "This skill produces a structured question bank. It does NOT draft outreach emails or generate proposals" gives Claude a clear stopping point.
+
+## Diagnosing Failures
+
+Common failure modes have predictable causes and fixes.
+
+**Doesn't fire at all.** The trigger description doesn't match what users actually type. Fix: add more quoted trigger phrases drawn from real queries in your daily work. If you wouldn't naturally say it that way, neither will a colleague.
+
+**Fires on wrong requests.** The trigger is too broad. Fix: add specificity to the description. Narrow the language to the specific context where the skill belongs.
+
+**Competing skills.** Two skills claim the same request. Fix: audit trigger descriptions for overlap and make them mutually exclusive. If there's genuine conceptual overlap, consider merging the skills or adding explicit boundary statements to each.
+
+**Generic output.** Process steps are too high-level. Fix: add specificity to every step. Replace "research the company" with "identify the company's industry, size, primary products, and any recent news in the last 90 days."
+
+**Inconsistent output.** Ambiguous steps produce different results each time Claude runs them. Fix: make every step unambiguous. If the step can be interpreted two ways, it will be — add an explicit output format description to remove the ambiguity.
+
+<Details title="Diagnosing competing skill conflicts">
+When two skills both claim the same trigger phrase, Claude has to pick one — and the choice may not be the one you intended. The fix is to audit trigger descriptions across all installed skills for semantic overlap, then make them mutually exclusive.
+
+For example: if `discovery-questions` and `demo-prep` both respond to "prepare for my call," you have a conflict. The fix is to sharpen both triggers: `discovery-questions` should fire on phrases that emphasize learning about the prospect ("understand what they need," "find out their requirements"), while `demo-prep` should fire on phrases that emphasize building presentation material ("build a demo script," "prepare talking points").
+
+If there is genuine functional overlap — the tasks are closely related and often done together — consider whether merging into one skill makes more sense than maintaining two competing ones. Two overlapping skills create cognitive overhead and unpredictable behavior; one well-scoped skill is easier to trust.
+</Details>
+
+## The Iteration Loop
+
+Skills aren't write-once artifacts. The feedback loop that makes them production-ready:
+
+1. **Use the skill** in real work for a week
+2. **Note every friction point** — where did you override the output, edit heavily, or skip steps entirely?
+3. **Update the skill** — bump the version, refine triggers, tighten process steps
+4. **Test again** with the three tests before redeploying
+
+Keep a simple friction log — three columns: What happened, Why it happened, What to change. After a week of use, group friction points by type (trigger misses, process gaps, output quality issues) and address each group in a version bump.
+
+<Callout type="tip">
+Version bumps create a history of what changed and when. Use semantic versioning: `0.1.0` to `0.2.0` for trigger changes, `0.1.0` to `0.1.1` for minor process tweaks, `0.x` to `1.0.0` when the skill is stable enough for team-wide use. When something breaks, the version history is how you trace what changed.
+</Callout>
+
+**Comparing versions.** When you bump from `0.1.0` to `0.2.0`, test both versions on the same three inputs. Compare outputs side-by-side. If the new version isn't clearly better on at least two of three inputs, the change isn't an improvement — revert.
+
+## When to Split vs. Expand
+
+Sometimes a skill grows too broad. Signs you need to split it:
+
+- The SKILL.md body exceeds 2,000 words
+- The process has meaningful branches ("if X, do this; if Y, do that")
+- You find yourself skipping whole sections for certain use cases
+
+Split by creating two focused skills from one broad one. "customer-communication" becomes "post-call-followup" and "cold-outreach" — each with their own triggers, processes, and reference material. Focused skills are easier to test and easier to trust.
+
+Signs you should expand instead of split:
+
+- The skill is under 800 words and output quality is still poor — remember, the target is 1,500–2,000 words. Expand first, then split only if the expanded version exceeds 2,000 words or develops branches.
+- Users need to run two skills back-to-back that logically belong together
+- The proposed split would produce skills with 90% overlapping content
+
+When in doubt, keep the skill together and tighten what you have. Premature splitting creates maintenance overhead without improving quality.
+
+## What's Next
+
+You now have a framework for building individual skills and making them reliable. But real SE workflows involve multiple skills working together — discovery flows into demo prep flows into post-call follow-up. In the next module, we'll learn how to compose skills into orchestrated workflows that cover an entire deal motion.
+
+<KnowledgeCheck
+  question="A skill runs correctly on a standard SaaS prospect but produces generic output for a healthcare company with an unusual procurement process. Which test should have caught this before deployment?"
+  options={[
+    "The trigger test — the skill should not fire for healthcare prospects",
+    "The quality test — running on diverse inputs including hard cases would have revealed the gap",
+    "The boundary test — the skill is operating outside its intended scope",
+    "The version test — the skill needs to be at 1.0.0 before being used on healthcare accounts"
+  ]}
+  correct={1}
+  explanation="The quality test requires running the skill on meaningfully different inputs — different industries, deal stages, and levels of CRM data completeness. A skill that only passes on clean, standard inputs hasn't been quality tested. Healthcare with unusual procurement is exactly the kind of hard case the quality test is designed to surface."
+/>
+
+<KnowledgeCheck
+  question="Your SKILL.md body has grown to 2,500 words and the process now has three meaningful branches for different deal sizes. What should you do?"
+  options={[
+    "Keep expanding until you reach 5,000 tokens — there is still budget available",
+    "Delete the branches and handle only the most common deal size",
+    "Split into focused skills, each handling one deal-size branch with its own trigger and process",
+    "Move the entire process into a reference file and keep SKILL.md as a stub"
+  ]}
+  correct={2}
+  explanation="Two of the three split indicators are present: the body exceeds 2,000 words, and the process has meaningful branches. The right move is to split into focused skills — each with its own trigger, process, and reference material. Focused skills are easier to test, easier to trust, and compose cleanly into larger workflows."
+/>
+
+<KeyTakeaways
+  items={[
+    "Every skill needs all three tests — trigger, quality, and boundary — before production use; each test catches a different class of failure.",
+    "Test on hard cases: diverse industries, sparse CRM data, edge-case deal types. A skill that only works on clean inputs isn't ready.",
+    "Common failures map to predictable causes: generic output means vague process steps; inconsistent output means ambiguous steps; scope creep means missing boundary statements.",
+    "The iteration loop (use, log friction, update, retest) is what turns a draft skill into a reliable one — use semantic versioning to track changes.",
+    "Split a skill when the body exceeds 2,000 words or develops meaningful branches; expand before splitting if the skill is still under 800 words."
+  ]}
+/>
+
+<SelfAssessment
+  items={[
+    "I can run all three tests on a new skill and correctly diagnose what to fix when one fails.",
+    "I can identify the root cause of common skill failures (doesn't fire, fires on wrong requests, generic output, inconsistent output, scope creep) and apply the right fix.",
+    "I can maintain a friction log and translate friction points into concrete skill improvements with appropriate version bumps.",
+    "I can decide whether a skill should be split or expanded based on body length and process branching."
+  ]}
+/>

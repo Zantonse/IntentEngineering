@@ -1,0 +1,248 @@
+---
+title: "Building Your First SE Skill"
+description: "An end-to-end walkthrough of building a discovery-questions skill — from identifying the need to testing the finished product."
+order: 2
+module: "building-skills"
+---
+
+## The Discovery Questions Skill
+
+Every SE preps discovery questions before prospect calls. You do it five or more times a week. You follow roughly the same process each time. And the questions you actually ask — the ones that open up a conversation — look nothing like what you'd get from a generic "generate discovery questions for a SaaS product" prompt.
+
+That gap between generic output and your actual process is where skills live.
+
+The discovery questions skill is a near-perfect first skill to build. The task is recurring, the process is structured, and you already know what good output looks like because you've produced it dozens of times. You're not inventing a workflow — you're encoding one you already have.
+
+This lesson walks through building it from scratch, step by step.
+
+## Step 1: Identify the Task
+
+Apply the three-questions test from the previous lesson to confirm discovery questions deserve a skill.
+
+Discovery prep passes all three: it recurs before every prospect conversation; it follows a consistent process (gather company context, map pain points, structure questions by category); and it requires domain knowledge Claude doesn't have by default — your product's differentiating capabilities, your team's preferred question structure, and the questions that have historically opened up technical conversations with your buyer type.
+
+Three for three. This is a skill, not a one-off prompt.
+
+<Callout type="key">
+Discovery prep passes the three questions test because it has all three properties: high frequency, a consistent repeatable process, and domain knowledge that Claude cannot infer from a generic prompt. That combination is exactly what a skill is built for.
+</Callout>
+
+## Step 2: Write the Trigger
+
+The trigger is the frontmatter `description` field — the text Claude reads when deciding whether to load this skill. It's the most critical part of the file. A skill with a weak trigger never fires, regardless of how good the rest of the content is.
+
+For discovery questions, think about every way someone on your team might ask for this. They won't always use the same words:
+
+- "Prepare discovery questions for my call with Acme tomorrow"
+- "Help me plan a technical discovery call"
+- "Generate questions for a prospect meeting"
+- "I need to understand what Fintech Corp actually needs before Thursday"
+
+Your trigger description needs to cover this range. Include the specific phrases people actually type, not just the abstract task name. Include variations that signal the same underlying intent — someone saying "plan a technical discovery call" wants the same skill as someone saying "prepare discovery questions."
+
+Here's the resulting frontmatter:
+
+```yaml
+---
+name: discovery-questions
+description: This skill should be used when the user asks to
+  "prepare discovery questions", "plan a technical discovery
+  call", "generate questions for a prospect meeting", or
+  mentions understanding customer requirements and technical
+  needs for an upcoming call.
+metadata:
+  version: 0.1.0
+---
+```
+
+The third-person format ("This skill should be used when...") is intentional — it's how Claude reads trigger logic. The quoted phrases give it concrete patterns to match against. The final clause ("mentions understanding customer requirements...") catches the cases where someone describes the underlying goal rather than using skill-specific vocabulary.
+
+<Callout type="tip">
+Add a catch-all clause at the end of your trigger description that targets the underlying intent rather than specific vocabulary. Users who say "I need to understand what Fintech Corp actually needs" want the same skill as users who say "prepare discovery questions" — the trigger should catch both.
+</Callout>
+
+## Step 3: Document the Process
+
+Before writing the skill body, write your process in plain language — not Claude instructions yet, just the actual steps you follow. Don't optimize early.
+
+First draft (rough notes):
+
+```
+- get background on the prospect
+- figure out what they need
+- write questions
+```
+
+That's accurate but useless as an instruction set. It's too vague to produce consistent output. Refine it: use imperative verbs, add specifics, break each step into what Claude actually needs to do.
+
+Refined process (imperative, specific):
+
+```markdown
+## Process
+
+1. Gather prospect context: company name, industry, size,
+   current tech stack, known pain points
+2. Identify the specific product capabilities being evaluated
+3. Review any previous interaction notes or CRM data
+4. Generate 15-20 discovery questions organized by category:
+   - Current state and pain points
+   - Technical requirements and constraints
+   - Decision criteria and timeline
+   - Integration and security needs
+5. Prioritize questions by discovery stage (initial vs. deep-dive)
+6. Format as a structured call prep document
+```
+
+Notice the difference. The rough notes leave Claude to infer what "figure out what they need" means in practice. The refined version tells Claude exactly what categories to use, how many questions to generate, and what the output format should be.
+
+Every process step should be specific enough that Claude knows what to produce — and specific enough that you could evaluate whether it did it correctly.
+
+<Callout type="warning">
+Always add a fallback for sparse input. Real SE work starts with partial information. Add a fallback in the process: "If CRM data is unavailable, ask the user for prospect context directly. If industry is unknown, use the general question set from references/question-bank.md." Skills that handle sparse inputs gracefully are more useful than skills that demand perfect data.
+</Callout>
+
+## Step 4: Identify Resources
+
+The SKILL.md body stays lean — under 500 lines (the recommended ceiling) and under 5,000 tokens. Anything that's too long, too detailed, or used only in specific scenarios belongs in the resource directories.
+
+For the discovery questions skill:
+
+- **`references/question-bank.md`** — Your team's full library of 500+ categorized questions. Too long to include in SKILL.md directly, but Claude can pull specific sections when needed.
+- **`references/industries.md`** — Industry-specific question templates for fintech, healthcare, manufacturing, and other common verticals. Loads when the prospect's industry is known.
+- **`scripts/format-questions.sh`** — Converts generated questions into the standardized call prep format your team uses. Deterministic output, consistent every time.
+- **`assets/call-prep-template.md`** — The team's standard call prep document structure. Claude fills this in rather than inventing a format from scratch.
+
+The resulting directory structure:
+
+```
+discovery-questions/
+├── SKILL.md
+├── references/
+│   ├── question-bank.md
+│   └── industries.md
+├── scripts/
+│   └── format-questions.sh
+└── assets/
+    └── call-prep-template.md
+```
+
+Each resource file solves a specific problem. The question bank handles depth. The industry templates handle vertical specificity. The script handles output consistency. The template handles formatting. None of them need to be in SKILL.md — they just need to be referenced from it.
+
+<Details title="Why keep resource files out of SKILL.md?">
+Claude has a context window budget per conversation. A 3,000-word question bank loaded into every discovery call interaction eats a significant portion of that budget — even on calls where you never need it. Resource files in `references/` are only loaded when the skill actually needs them, keeping the baseline context cost low and reserving budget for the conversation itself.
+
+The practical ceiling: if a resource is over 500 words and does not change every time you use the skill, it belongs in `references/`. Scripts that produce deterministic output belong in `scripts/`. Templates the user fills in belong in `assets/`. This separation also makes it much easier to update individual components without touching the core skill logic.
+</Details>
+
+## Step 5: Write the SKILL.md
+
+With the frontmatter, process, and resources defined, the SKILL.md file assembles naturally. The abbreviated version below shows the key sections and how they flow together:
+
+```markdown
+---
+name: discovery-questions
+description: This skill should be used when the user asks to
+  "prepare discovery questions", "plan a technical discovery
+  call", "generate questions for a prospect meeting", or
+  mentions understanding customer requirements and technical
+  needs for an upcoming call.
+metadata:
+  version: 0.1.0
+---
+
+## Purpose
+
+Prepare a structured set of discovery questions tailored to a
+specific prospect before a sales or technical call. Output is a
+call prep document organized by question category and discovery
+stage.
+
+## Activation Conditions
+
+Apply this skill when preparing for initial discovery calls,
+deep-dive technical sessions, or pre-demo qualification
+conversations.
+
+## Process
+
+1. Gather prospect context: company name, industry, size,
+   current tech stack, known pain points
+2. Identify the specific product capabilities being evaluated
+3. Review any previous interaction notes or CRM data
+4. Generate 15-20 discovery questions organized by category
+   ...
+
+## Resources
+
+- For a categorized question library, reference
+  `references/question-bank.md`
+- For industry-specific templates, reference
+  `references/industries.md`
+- Run `scripts/format-questions.sh` to format final output
+- Use `assets/call-prep-template.md` as the output template
+```
+
+The sections connect: purpose orients Claude, activation conditions narrow when it applies, process tells Claude what to do, resources tell it where to look for depth. Nothing is redundant. Nothing is missing.
+
+## Step 6: Test It
+
+Three tests confirm the skill is working correctly.
+
+**Trigger test.** Type: "Prepare questions for my call with Acme Corp tomorrow." Does the skill fire? If Claude generates discovery questions using your structured process rather than producing a generic list, the trigger is working. If it produces something generic, your description phrases aren't matching the input — add more variations.
+
+**Quality test.** Look at the questions that came out. Are they specific to Acme Corp's industry and known stack? Did Claude use the question categories you defined? Are they in the right format? If the questions look like something you'd Google rather than something you'd actually ask, the process steps need more specificity.
+
+**Boundary test.** Does the skill stay in its lane? After generating questions, does Claude try to draft a follow-up email, schedule the meeting, or produce a demo outline? It shouldn't. If it does, your activation conditions or process steps are too broad — they're implying a larger scope than you intended.
+
+Pass all three tests and the skill is working as designed. Fail one and you know exactly where to look.
+
+## Try It Yourself
+
+Use the builder below to draft your own discovery questions skill. Start with the trigger phrases you'd actually use — the words you type when you need help prepping for a call — and build out from there. The builder will walk you through each section and flag common issues before you ship it.
+
+<SkillBuilder />
+
+The next lesson shows complete, production-ready examples of SE skills — demo prep, RFP response, follow-up emails — so you can see what a fully developed skill looks like across different task types.
+
+<KnowledgeCheck
+  question="When refining process steps from rough notes to skill instructions, which version is more useful?"
+  options={[
+    "Figure out what the prospect needs",
+    "Research the company before the call",
+    "Gather prospect context: company name, industry, size, current tech stack, and known pain points",
+    "Prepare relevant discovery questions for the meeting"
+  ]}
+  correct={2}
+  explanation="The third option names exactly what to gather and in what form. Vague steps like 'figure out what they need' or 'research the company' leave Claude to infer the specifics — and that inference produces inconsistent output. Concrete, enumerated steps give Claude a clear target."
+/>
+
+<KnowledgeCheck
+  question="A discovery questions skill generates questions and then automatically drafts a follow-up email. Which test catches this problem?"
+  options={[
+    "The trigger test — the skill is firing on the wrong phrases",
+    "The quality test — the output does not match the expected format",
+    "The boundary test — the skill is operating outside its intended scope",
+    "The version test — the skill needs a version bump before this can be evaluated"
+  ]}
+  correct={2}
+  explanation="The boundary test checks whether the skill stays within its defined scope. Drafting a follow-up email is outside the scope of a discovery questions skill. If this happens, the activation conditions or process steps are implying a larger scope than intended — add explicit boundary statements to stop it."
+/>
+
+<KeyTakeaways
+  items={[
+    "The discovery questions skill is an ideal first skill because the task is recurring, the process is structured, and you already know what good output looks like.",
+    "Trigger descriptions must cover natural language variation — users say 'plan a technical discovery call' and 'prepare discovery questions' to mean the same thing, and the trigger must catch both.",
+    "Process steps should be refined from rough notes into imperative, specific instructions with concrete nouns, quantities, and categories.",
+    "Resource files (question-bank.md, industry templates, output scripts) keep SKILL.md lean while making depth available when needed.",
+    "All three tests — trigger, quality, and boundary — must pass before a skill is ready for production use."
+  ]}
+/>
+
+<SelfAssessment
+  items={[
+    "I can write a trigger description with third-person format and multiple quoted phrases that cover natural language variation.",
+    "I can refine rough process notes into imperative, step-by-step instructions specific enough for Claude to follow and evaluate.",
+    "I can identify which supporting material belongs in references/, scripts/, and assets/, and why each stays out of SKILL.md.",
+    "I can run all three tests (trigger, quality, boundary) and diagnose what to fix when one fails."
+  ]}
+/>

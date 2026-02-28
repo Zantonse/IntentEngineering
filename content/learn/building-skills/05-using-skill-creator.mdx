@@ -1,0 +1,194 @@
+---
+title: "Using the Skill Creator"
+description: "How to use the skill-creator skill to streamline the entire skill creation process — from initialization to packaging and iteration."
+order: 5
+module: "building-skills"
+---
+
+## Claude Code as the Driver
+
+So far, we've learned the skill creation process conceptually — the 6-step workflow, how to write trigger descriptions, how to structure resources. In practice, you don't do this in a text editor alone. The `skill-creator` skill (available as a Claude Code plugin) — a skill for creating skills — guides you through the entire process interactively.
+
+The `skill-creator` is a **meta-skill**: it encodes the best practices for skill creation into a structured workflow that Claude follows when you ask it to build a skill. Instead of remembering every frontmatter rule and progressive disclosure pattern, you collaborate with Claude Code and it handles the scaffolding, validation, and packaging.
+
+The workflow maps directly to the 6 steps from Lesson 1, with automation at the steps where manual work adds friction.
+
+<Callout type="key">
+The skill-creator is a meta-skill: it encodes the best practices from this entire module into a guided, validated workflow. You bring domain expertise; Claude Code handles scaffolding, validation, and packaging. The output follows every best practice by default.
+</Callout>
+
+## The Skill-Creator Workflow
+
+### Step 1: Describe What You Need
+
+Tell Claude Code what skill you want to build. Be specific about the task, when it triggers, and what output it produces. Claude will ask clarifying questions — this is the "understand with concrete examples" phase.
+
+Example prompt:
+
+```
+I need a skill for preparing demo scripts. I use it before
+every prospect demo to build a tailored script with talking
+points, fallback scenarios, and a leave-behind summary.
+It should trigger when I say things like "prepare a demo",
+"build a demo script", or "create a demo plan".
+```
+
+Claude Code will ask follow-up questions: "What functionality should it support?", "Can you give examples of how you'd use it?", "What would a user say that should trigger this skill?" Don't skip these — the answers shape the `description` field, which determines whether the skill ever fires.
+
+### Step 2: Plan the Resources
+
+Claude Code analyzes your examples and identifies what belongs in `scripts/`, `references/`, and `assets/`. It proposes a **resource plan** — you review and adjust. This maps to Step 4 (Identify Resources) from the 6-step process.
+
+For the demo-prep example, Claude might propose: a `references/prospect-research-template.md` for the discovery questions, a `scripts/generate-script.py` for assembling the final document, and an `assets/leave-behind-template.md` for the one-pager. You confirm, refine, or add resources before any files get created.
+
+### Step 3: Initialize with `init_skill.py`
+
+Claude Code runs the initialization script to scaffold the skill directory:
+
+```bash
+scripts/init_skill.py demo-prep --path ./skills
+```
+
+This creates the following structure:
+
+```
+demo-prep/
+├── SKILL.md          # Template with TODO placeholders
+├── scripts/
+│   └── example.py    # Example script (chmod 755)
+├── references/
+│   └── api_reference.md
+└── assets/
+    └── example_asset.txt
+```
+
+The generated `SKILL.md` includes: frontmatter with `name: demo-prep` and a TODO for the description, a title heading, an Overview section with a TODO placeholder, a structural patterns guide section (intended to be deleted once you've used it as a reference), and a Resources section stub. You don't start from blank — the skeleton is there and you fill it in.
+
+### Step 4: Implement and Edit
+
+Claude Code helps you fill in the `SKILL.md` and create the resource files. Key rules it follows:
+
+- **Imperative form** — all instructions are commands, not suggestions
+- **Progressive disclosure** — `SKILL.md` body stays under 500 lines (the recommended ceiling) and under 5,000 tokens; detail goes in `references/`
+- **Context budget** — only include what Claude doesn't already know
+- Scripts get tested by actually running them
+
+This is where your domain expertise matters most. Claude Code handles the structure; you provide the SE workflow knowledge. If you know that certain enterprise accounts need a different objection-handling sequence, that goes into a reference file. The `SKILL.md` points to it — it does not contain it.
+
+<Callout type="tip">
+Calibrate instruction specificity to the nature of the operation. A commit message formatter needs low freedom — give it `scripts/format.sh` with exact rules and it runs deterministically. A discovery question generator needs high freedom — text guidelines work because the output varies intentionally by prospect. An RFP parser sits in the middle — pseudocode with parameters gives structure without over-constraining Claude's judgment.
+</Callout>
+
+Skills that should only run when explicitly invoked (never auto-triggered by ambient conversation) can include the `disable-model-invocation: true` flag in their frontmatter. This forces the user to type `/skill-name` directly rather than relying on description-based matching.
+
+For dynamic context injection, use the `!`command`` syntax in your `SKILL.md` body: a backtick-wrapped shell command prefixed with `!` executes before the skill prompt is sent, and its output is injected into the context automatically. This is useful for injecting live CRM data, current git status, or environment variables that change between runs.
+
+For skills that perform deep research — crawling documentation, analyzing large codebases, or pulling from multiple external sources — configure the agent step with `context: fork` and `agent: Explore`. This forks a separate context window for the exploration work, so verbose intermediate output stays out of your main conversation context and the parent session only receives the condensed result.
+
+<Details title="When to use disable-model-invocation: true">
+By default, skills auto-trigger based on description matching — Claude reads every enabled skill's description on every message and loads the best match. This is efficient for most skills, but it creates a risk for skills that produce customer-facing output: the skill might fire mid-conversation when you casually mention a call, producing a draft you didn't ask for.
+
+Set `disable-model-invocation: true` in the frontmatter when:
+- The skill produces content that goes directly to customers or prospects
+- You need explicit user intent before the skill runs (no accidental triggers)
+- The skill involves irreversible actions (sending messages, updating records)
+
+With this flag set, the skill only runs when you type `/skill-name` directly. It does not appear in description-based matching at all — its description is removed from the always-on context entirely, which also saves token budget.
+</Details>
+
+### Step 5: Package with `package_skill.py`
+
+When the skill is ready, Claude Code runs the packaging script:
+
+```bash
+scripts/package_skill.py ./skills/demo-prep
+```
+
+Before producing a distributable file, the validator runs a series of checks:
+
+- `SKILL.md` exists at the top level of the skill directory
+- The frontmatter is valid YAML
+- Only allowed property keys are present: `name`, `description`, `license`, `allowed-tools`, `metadata`, `compatibility` (this is the base Agent Skills spec validation — Claude Code supports additional fields beyond what the validator checks, including `disable-model-invocation`, `user-invocable`, `model`, `context`, `agent`, `hooks`, and `argument-hint`)
+- `name` is kebab-case (lowercase letters and hyphens only), maximum 64 characters, no leading or trailing hyphens, no double hyphens
+- `description` is present and under 1,024 characters, with no angle brackets
+
+If validation fails, Claude Code reports the exact errors and helps you fix them. If it passes, the script produces a distributable `.zip` file.
+
+<Callout type="warning">
+To share a skill with your team, commit the skill directory to version control under `.claude/skills/` — anyone who checks out the repo gets the skill automatically. For broader distribution outside a single project, use plugins. Never distribute `.zip` files outside of version control; they can't be audited, versioned, or rolled back easily.
+</Callout>
+
+### Step 6: Iterate
+
+Use the skill on real work, note friction points, and ask Claude Code to improve it. The iteration loop from Lesson 4 applies here — but now Claude Code tracks the changes and re-packages automatically. You don't re-run `init_skill.py`; you edit the existing files and re-run `package_skill.py` once the changes are stable.
+
+## Key Design Principles
+
+**Context is a public good.** The context window is shared between the skill, the conversation, and everything else Claude needs to reason about. The skill-creator enforces lean `SKILL.md` files — under 500 lines (the recommended ceiling) and under 5,000 tokens — and pushes detail to reference files. Every paragraph must justify its token cost. If a section doesn't change how Claude behaves, it doesn't belong in the skill.
+
+**Progressive disclosure.** There are three levels of loading: metadata (always in context), the `SKILL.md` body (loaded when the skill triggers), and bundled resources (loaded as needed). This keeps the context window lean while making detailed information available when Claude actually needs it. The skill-creator enforces this separation — it won't let you dump everything into `SKILL.md`.
+
+## The Frontmatter Description Matters Most
+
+The skill-creator puts special emphasis on the `description` field in frontmatter. This is the **primary triggering mechanism** — it's how Claude decides whether to load your skill at all. The `description` field budget is roughly 100 tokens, and it sits in every conversation as always-on metadata. That budget matters because Claude Code loads skill metadata for all installed skills simultaneously. The budget scales dynamically at 2% of the context window (with a 16,000-character fallback). How many skills fit depends on description length — run `/context` to check whether any skills are being excluded.
+
+The skill-creator checks that your description includes:
+
+- What the skill does
+- Specific trigger phrases and contexts
+- All "when to use" information (not in the body — the body only loads after triggering)
+
+<Callout type="key">
+A great SKILL.md body with a weak description never fires. The description is the only part of your skill that Claude reads before deciding to engage it. The skill-creator catches weak descriptions before you waste time on content that never loads — it flags vague descriptions and prompts you to add specific trigger phrases and use-case context.
+</Callout>
+
+## What You Don't Need
+
+The skill-creator also enforces what not to include. No `README.md`. No `INSTALLATION_GUIDE.md`. No `CHANGELOG.md`. The skill folder is for an AI agent to read, not for humans. `README.md` and `CHANGELOG.md` are human documentation patterns — Claude doesn't need them. They bloat the skill and confuse the reader, which is another Claude instance. A skill contains only what an AI agent needs to do the job. If you find yourself writing a README, you're writing for a human audience, not for Claude.
+
+## Putting It All Together
+
+The skill-creator takes the 6-step process from this module and wraps it in an interactive, validated workflow. You bring the domain expertise. Claude Code handles the scaffolding, validation, and packaging. The result is a clean, tested skill that follows every best practice by default — correct frontmatter, lean body, properly separated resources, tested scripts, and a description strong enough to actually trigger. In the next module, we'll learn how to compose these individual skills into orchestrated multi-step workflows.
+
+<KnowledgeCheck
+  question="What does the skill-creator flag as the most common reason a finished skill never fires in production?"
+  options={[
+    "The SKILL.md body is too long and exceeds the context budget",
+    "The description field is vague or missing specific trigger phrases and use-case context",
+    "The skill directory is missing a README.md file",
+    "The scripts/ directory contains untested shell scripts"
+  ]}
+  correct={1}
+  explanation="The description field is the only part of your skill Claude reads before deciding to engage it. A vague description — one that doesn't include specific trigger phrases and use-case context — means the skill never loads regardless of how good the body is. The skill-creator flags this specifically because it's the most common cause of a well-built skill that never fires."
+/>
+
+<KnowledgeCheck
+  question="A skill produces customer-facing output and you want it to run only when explicitly invoked, never from ambient conversation. Which frontmatter setting achieves this?"
+  options={[
+    "allowed-tools: []",
+    "user-invocable: false",
+    "disable-model-invocation: true",
+    "context: fork"
+  ]}
+  correct={2}
+  explanation="Setting disable-model-invocation: true removes the skill's description from the always-on context entirely and prevents description-based matching. The skill only runs when the user explicitly types /skill-name. This is the correct setting for any skill that produces content that goes directly to customers, where accidental triggering is unacceptable."
+/>
+
+<KeyTakeaways
+  items={[
+    "The skill-creator is a meta-skill that encodes all best practices from this module into a guided, validated workflow — you provide domain expertise, Claude Code handles scaffolding and packaging.",
+    "The description field is the primary triggering mechanism and the most important part of any skill — a great body with a weak description never fires.",
+    "Progressive disclosure means three loading levels: metadata always in context, SKILL.md body on trigger, and resources on demand. The skill-creator enforces this separation.",
+    "Use disable-model-invocation: true for any skill that produces customer-facing output or requires explicit user intent before running.",
+    "Skill folders contain only what an AI agent needs — no README, no CHANGELOG, no human documentation patterns that bloat context and confuse the reader."
+  ]}
+/>
+
+<SelfAssessment
+  items={[
+    "I can use the skill-creator workflow end-to-end: describe the need, plan resources, initialize, implement, package, and iterate.",
+    "I can write a description field strong enough to trigger reliably, with specific phrases and use-case context — not just a summary of what the skill does.",
+    "I can decide when to use disable-model-invocation: true versus standard description-based triggering.",
+    "I understand the three levels of progressive disclosure and can structure a skill so each level carries the right amount of content."
+  ]}
+/>

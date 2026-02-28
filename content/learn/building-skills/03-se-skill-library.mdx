@@ -1,0 +1,222 @@
+---
+title: "SE Skill Library"
+description: "Three complete worked SE skills — demo preparation, RFP response, and post-call follow-up — with full trigger descriptions, process steps, and resource structures."
+order: 3
+module: "building-skills"
+---
+
+## Building Your Skill Library
+
+Every SE has a core set of repeating workflows. The tasks that show up week after week — preparing for demos, responding to RFPs, sending follow-ups — are exactly the kind of work that benefits most from a well-built skill. When the workflow is consistent enough to codify, a skill pays dividends on every repetition.
+
+In the previous lesson, we built `discovery-questions` from scratch. That example focused on the mechanics: frontmatter structure, trigger descriptions, and process steps. Now we'll walk through three more SE skills that cover different stages of the sales cycle. Each example is fully worked — complete trigger description, process steps, and resource layout — so you can use them directly or adapt them as starting points.
+
+Pay attention to how each skill balances specificity against flexibility. The goal is to capture enough structure that Claude knows exactly what to do, without locking yourself into a rigid flow that breaks the moment the situation varies slightly.
+
+<Callout type="key">
+Each skill in this lesson sits at a different point on the specificity spectrum: demo-prep allows medium freedom (consistent process, variable flow), RFP-response requires low freedom (rigid accuracy and compliance), and post-call follow-up allows high freedom (variable tone and detail by relationship stage). Match your instruction level to the nature of the task.
+</Callout>
+
+## Skill 1: Demo Preparation
+
+Preparing a tailored product demo is one of the highest-leverage things an SE does before a meeting. A generic demo loses audience attention quickly; a demo mapped to a prospect's specific pain points lands differently. This skill handles the end-to-end process of turning discovery notes into a demo script, with fallback scenarios ready for the objections that always come up.
+
+```yaml
+---
+name: demo-prep
+description: This skill should be used when the user asks to
+  "prepare a demo", "build a demo script", "create a demo
+  plan for [prospect]", "tailor a demo", or mentions
+  preparing a product demonstration for a specific customer
+  or use case.
+---
+```
+
+### Process
+
+1. Review discovery notes and extract the prospect's stated pain points, technical environment, and success criteria.
+2. Map pain points to specific product capabilities using the product-capabilities reference; note which capabilities are primary and which are supporting.
+3. Build a demo script with talking points tied to each capability, ordered by the prospect's stated priorities rather than product feature sequence.
+4. Identify two to three likely objection scenarios and prepare fallback responses using the objection-handling reference.
+5. Set up the demo environment using the setup-demo-env.sh script, confirming all required integrations and sample data are in place.
+6. Create a leave-behind summary using the template in assets/, capturing the capabilities shown, key talking points, and proposed next steps.
+7. Do a dry run and note any timing or flow issues before the actual meeting.
+
+### Directory Structure
+
+```
+demo-prep/
+├── SKILL.md
+├── references/
+│   ├── product-capabilities.md
+│   ├── demo-scenarios.md
+│   └── objection-handling.md
+├── scripts/
+│   └── setup-demo-env.sh
+└── assets/
+    ├── demo-script-template.md
+    └── leave-behind-template.md
+```
+
+The `references/` folder holds stable, reusable knowledge: what the product can do, proven demo scenarios, and common objection responses. These are things you maintain once and pull from repeatedly. The `assets/` folder holds output templates — documents that get generated fresh for each prospect. The script in `scripts/` handles the deterministic setup work that would otherwise be manual and error-prone.
+
+**Specificity spectrum:** Demo-prep sits at medium freedom. The process is consistent, but the flow varies by prospect — what to lead with, how long to spend on each capability, which objections to pre-empt. The skill guides without prescribing.
+
+## Skill 2: RFP Response
+
+RFPs are high-stakes, time-intensive, and follow a consistent pattern. A procurement team sends a formal questionnaire; you need to respond accurately, completely, and within a deadline. The failure modes are predictable too: missing questions, vague answers, inconsistent claims across sections, and last-minute scrambles for compliance documentation. This skill imposes enough structure to avoid most of those failure modes.
+
+```yaml
+---
+name: rfp-response
+description: This skill should be used when the user asks to
+  "respond to an RFP", "draft RFP responses", "prepare a
+  proposal response", "fill out an RFP", or mentions
+  responding to a request for proposal, tender, or formal
+  procurement questionnaire.
+---
+```
+
+### Process
+
+1. Parse the RFP document into a structured list of requirements, questions, and evaluation criteria — one item per line, with section references intact.
+2. Cross-reference each requirement against the capability-matrix reference to determine whether the answer is yes, partial, roadmap, or not applicable.
+3. Flag any gaps or partial answers and identify the subject matter expert or team that needs to provide input before drafting.
+4. Draft responses section by section using the rfp-template.md asset, keeping language consistent with previous approved responses in the compliance-responses reference.
+5. Add supporting evidence: relevant case studies, benchmark data, or technical specifications that substantiate claims.
+6. Compile the final document using format-response.sh, which handles section numbering, table of contents generation, and output formatting.
+7. Run through the internal review checklist in rfp-template.md before submission, verifying completeness, accuracy, and required attachments.
+
+### Directory Structure
+
+```
+rfp-response/
+├── SKILL.md
+├── references/
+│   ├── capability-matrix.md
+│   ├── compliance-responses.md
+│   └── case-studies.md
+├── scripts/
+│   └── format-response.sh
+└── assets/
+    ├── rfp-template.md
+    └── compliance-cert-list.md
+```
+
+<Callout type="warning">
+The capability matrix and compliance responses are the institutional knowledge that makes RFP work possible at speed. Building these references well — and keeping them current — is what turns a multi-day effort into a manageable task. Stale reference files produce inconsistent or inaccurate responses, which is worse than no skill at all on a compliance document.
+</Callout>
+
+The compliance certificate list lives in assets rather than references because it gets attached as a deliverable, not just consulted during drafting.
+
+**Specificity spectrum:** RFP-response sits at low freedom. Compliance and formatting are rigid — answers need to be accurate, consistent with prior submissions, and structured to match the procurement document. The skill enforces that structure rather than leaving room for interpretation.
+
+## Skill 3: Post-Call Follow-Up
+
+The window immediately after a call is when follow-up is most valuable and most often handled poorly. Details are fresh, action items are clear in your head, and a prompt, well-structured follow-up sets the tone for next steps. This skill handles both the customer-facing email and the internal CRM notes, so nothing falls through the gap between the two.
+
+```yaml
+---
+name: post-call-followup
+description: This skill should be used when the user asks to
+  "draft a follow-up", "write a post-call summary",
+  "create a follow-up email", "summarize the call and next
+  steps", or mentions preparing follow-up communications
+  after a customer or prospect meeting.
+---
+```
+
+### Process
+
+1. Extract key discussion points from call notes or transcript, grouping by topic: pain points surfaced, capabilities discussed, and questions raised.
+2. Identify all action items with clear owners and due dates, distinguishing between items owned by your team and items owned by the prospect.
+3. Draft the follow-up email using the follow-up-template.md asset: open with a brief call summary, list next steps with owners, and close with the agreed meeting cadence or timeline.
+4. Prepare internal CRM notes using the internal-notes-template.md asset, capturing deal stage signals, stakeholder sentiment, and any competitive intelligence mentioned.
+5. Run format-crm-notes.sh to normalize the internal notes into the CRM's expected format before copying over.
+6. Flag any technical risks or blockers surfaced during the call for escalation, noting the specific concern and who raised it.
+
+### Directory Structure
+
+```
+post-call-followup/
+├── SKILL.md
+├── references/
+│   └── email-guidelines.md
+├── scripts/
+│   └── format-crm-notes.sh
+└── assets/
+    ├── follow-up-template.md
+    └── internal-notes-template.md
+```
+
+This skill has a lighter reference footprint than the others because the raw material — your call notes — comes from outside the skill directory. The email guidelines reference handles tone, length, and formatting conventions so the output stays consistent regardless of who ran the call.
+
+**Specificity spectrum:** Post-call sits at high freedom. Tone and detail level vary by relationship stage — a follow-up to a new prospect reads differently than one to an account you've worked with for two years. The skill provides structure without prescribing voice.
+
+<Callout type="tip">
+Post-call follow-up is a good candidate for `disable-model-invocation: true` in the frontmatter, since it produces content that goes directly to customers and prospects. Requiring explicit invocation (`/post-call-followup`) prevents the skill from firing mid-conversation when you mention a call — it only runs when you deliberately ask for it.
+</Callout>
+
+## Patterns Across Skills
+
+Looking at these three skills together, a few structural patterns emerge that are worth carrying into your own work:
+
+- **Triggers typically include several quoted phrases plus a general description.** This breadth is intentional. Claude needs to recognize the task whether the user says "build a demo script" or "tailor a demo" or "prepare a product demonstration." Covering the natural variation in phrasing is what makes triggers reliable.
+- **Process steps are imperative and specific.** Each step starts with a verb and names a concrete action. "Review discovery notes and extract pain points" is actionable. "Consider the prospect context" is not. Specificity is what separates a process that Claude can follow from one it has to interpret.
+- **Heavy reference material stays in references/.** Reusable knowledge — capability matrices, objection libraries, case studies — lives in references/ because it persists across many uses of the skill. Putting it there makes it easy to update in one place and easy for Claude to locate when drafting.
+- **Output formatting lives in scripts or templates.** Anything that needs to look a particular way — CRM notes format, RFP document structure, leave-behind layout — is handled by a script or an asset template. This keeps formatting concerns separate from content concerns, and it means the output is consistent even when the content varies.
+
+<Details title="How these skills connect in orchestrated workflows">
+In Module 3, you'll see these same skills reappear as building blocks in orchestrated workflows — `rfp-response` decomposed into a four-step pipeline, `post-call-followup` broken into a chain of focused skills. The key insight is that a well-scoped individual skill composes cleanly into a larger system precisely because it does one thing completely.
+
+A skill that tries to do too much becomes hard to reuse as a component. `post-call-followup` works as a standalone skill and as a step in a post-call workflow chain because its scope is well-defined: it takes call notes in and produces a customer email and CRM notes out. That clear interface is what makes composition possible.
+</Details>
+
+In Module 3, you'll see these same skills reappear as building blocks in orchestrated workflows — `rfp-response` decomposed into a four-step pipeline, `post-call-followup` broken into a chain of focused skills. Each skill you build here becomes a component in a larger system.
+
+The next lesson covers testing and iterating on skills. A skill that works in theory may behave unexpectedly when Claude encounters an edge case — an RFP with unusual structure, a call with no clear action items, a demo request with minimal discovery notes. Knowing how to test systematically and refine your process steps is what turns a draft skill into a reliable one.
+
+The SE skill ecosystem for Claude Code is still in its earliest days. The patterns in this lesson are designed to be starting points you adapt to your own product and workflow — not templates to copy verbatim.
+
+<KnowledgeCheck
+  question="The compliance certificate list in the RFP-response skill is placed in assets/ rather than references/. Why?"
+  options={[
+    "It is too large to fit in references/",
+    "It gets attached as a deliverable, not just consulted during drafting",
+    "It changes every time the skill runs",
+    "Assets/ is the default location for all non-SKILL.md files"
+  ]}
+  correct={1}
+  explanation="The distinction between assets/ and references/ is about how the file is used. References are consulted to inform what Claude writes. Assets are produced as output — they get attached, sent, or handed off. The compliance cert list is attached to the RFP submission, so it belongs in assets/."
+/>
+
+<KnowledgeCheck
+  question="Which skill in this lesson sits at 'low freedom' on the specificity spectrum, and why?"
+  options={[
+    "Demo-prep, because the demo flow changes by prospect",
+    "Post-call follow-up, because tone varies by relationship stage",
+    "RFP-response, because compliance and formatting are rigid and must be accurate",
+    "Discovery-questions, because question categories are fixed"
+  ]}
+  correct={2}
+  explanation="RFP-response requires low freedom because answers must be accurate, consistent with prior submissions, and structured to match the procurement document. There is no room for Claude to interpret or vary — the skill enforces rigid structure rather than guiding within flexible boundaries."
+/>
+
+<KeyTakeaways
+  items={[
+    "Demo-prep, RFP-response, and post-call follow-up each sit at different points on the specificity spectrum — match instruction rigidity to task rigidity.",
+    "Triggers should cover the full range of natural phrasing, not just the canonical task name, to ensure reliable activation.",
+    "Reusable institutional knowledge (capability matrices, objection libraries, compliance responses) belongs in references/ so it can be updated in one place and loaded on demand.",
+    "Output formatting concerns (CRM format, document structure, leave-behind layout) belong in scripts or asset templates, separate from content logic.",
+    "Well-scoped individual skills compose cleanly into orchestrated multi-step workflows — scope discipline now pays dividends in Module 3."
+  ]}
+/>
+
+<SelfAssessment
+  items={[
+    "I can recognize where a skill sits on the specificity spectrum and write process steps at the appropriate level of freedom.",
+    "I can distinguish between files that belong in references/ (consulted) versus assets/ (produced as output) versus scripts/ (deterministic transformation).",
+    "I can identify the structural patterns that appear across all three skills and apply them to skills I build for my own workflow.",
+    "I understand why skill scope discipline matters for composing skills into larger orchestrated workflows."
+  ]}
+/>

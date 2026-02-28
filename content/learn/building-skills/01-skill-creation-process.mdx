@@ -1,0 +1,160 @@
+---
+title: "The Skill Creation Process"
+description: "The 6-step process for turning a repeating SE task into a working skill — from identifying the task to testing the result."
+order: 1
+module: "building-skills"
+---
+
+## The Six Steps
+
+Building a skill is not a creative exercise. It is a documentation exercise. You are taking something you already know how to do and writing it down precisely enough that Claude can replicate your process on demand. The six steps below give you a repeatable path from "I keep doing this manually" to a working skill you can use immediately.
+
+### 1. Identify the Repeating Task
+
+Start with frequency. Find tasks you do three or more times per week that follow a consistent pattern. Writing up a post-call summary, generating technical discovery questions for a specific persona, assembling an RFP response from existing collateral — these are strong candidates. Tasks that vary wildly every time, or that depend entirely on creative judgment in the moment, are not.
+
+Apply the **three questions test** before investing time in a skill:
+
+1. Do I do this at least three times a week?
+2. Do I follow roughly the same process each time?
+3. Would a skilled colleague need explicit instructions to do it my way?
+
+If all three answers are yes, you have a skill worth building. If the answer to question two is no, you have a process problem to solve before you have a skill problem.
+
+<Callout type="key">
+The three questions test is your first filter. All three must pass before a task earns a skill. Frequency alone is not enough — the process must also be consistent and non-obvious.
+</Callout>
+
+### 2. Write the Trigger Description
+
+The trigger description is how Claude decides when to load your skill. It lives in the `description` field of your frontmatter and must use **third-person format** — "This skill should be used when..." rather than "Use this skill when...". The distinction matters because Claude reads this field as a signal, not a command.
+
+Be specific about the phrases your teammates or you would actually type. Vague triggers cause misfires. If your skill is about discovery call prep, the trigger should include the words people use when they think about that task.
+
+```yaml
+description: This skill should be used when the user asks to
+  "prepare discovery questions", "plan a technical discovery
+  call", or "generate questions for a prospect meeting".
+```
+
+Include three to five representative phrases. Pull them from your own Slack messages, calendar invites, or the way you describe tasks to yourself. If you would type "help me prep for my discovery call with Acme," that exact phrasing should appear somewhere in your trigger.
+
+<Callout type="warning">
+The description field has a budget of ~100 tokens and sits in every conversation — it's an always-on context cost, unless `disable-model-invocation: true` is set, which removes the description from context entirely. Every enabled skill pays this cost whether it triggers or not. Make every word count.
+</Callout>
+
+### 3. Document the Process
+
+This is the core of the skill and the step where most people underinvest. The **process documentation** is your domain expertise, converted into numbered steps written in imperative form. Claude follows instructions, so every step should read like an instruction.
+
+The difference between vague and useful is the level of specificity:
+
+**Too vague:** "Research the prospect and prepare relevant questions."
+
+**Useful:** "1. Review the prospect's LinkedIn and company website for recent product launches, hiring trends, or leadership changes in the past 90 days. 2. Cross-reference against the use case library in `references/use-cases.md` to identify which two or three cases are most relevant. 3. Write one open-ended discovery question per use case, targeting the technical buyer persona."
+
+Document the process as if you are training a new SE on your first day at the company. Every assumption you carry in your head needs to be on the page.
+
+<Callout type="tip">
+Write process steps in imperative form with concrete nouns. "Review the prospect's LinkedIn for recent product launches" beats "research the prospect." Specificity is what lets Claude know whether it did the step correctly.
+</Callout>
+
+### 4. Identify Resources
+
+Before you write the full skill file, inventory what supporting material already exists or needs to be created. Supporting files fall into three categories: **references**, **scripts**, and **assets**.
+
+The rule of thumb: if it is over 500 words and does not change every time you use the skill, it belongs in `references/`. If it produces consistent structured output — a meeting recap format, a slide outline, an email template — it belongs in `scripts/`. If it is a template the user fills in, it belongs in `assets/`.
+
+Keeping this material out of SKILL.md serves a practical purpose. Claude has a context window budget per conversation. Loading a 3,000-word reference document into every call that touches your skill wastes that budget. Reference files get loaded only when the skill needs them.
+
+### 5. Write the SKILL.md
+
+With your process documented and your resources inventoried, you are ready to assemble the **SKILL.md file**. The frontmatter captures the metadata Claude uses for routing and display. The body is the skill itself: context, instructions, process steps, and output format.
+
+Target under 500 lines (the recommended ceiling) and under 5,000 tokens for the body. These limits reflect the context window budget a skill should consume — enough to give Claude complete instructions without crowding out the conversation itself. If your skill exceeds these limits, you have material that should move into reference files.
+
+Write the output format section last. After you have documented the process, it is usually obvious what the final deliverable should look like. Specify structure, length, and tone. If the skill produces something the user will send to a customer, say so explicitly — and add `disable-model-invocation: true` to the frontmatter. This flag prevents the skill from auto-triggering based on description matching; it only runs when explicitly invoked by name, which is the right behavior for any output that goes directly to a customer.
+
+### 6. Test the Skill
+
+A skill is not done until it passes three quick tests.
+
+**Trigger test:** Fire the skill with several different phrasings. Does it load on "prep my discovery questions"? What about "I have a technical call tomorrow with a fintech prospect"? If Claude misses obvious phrasings, broaden the trigger description.
+
+**Quality test:** Run the skill on a real, current piece of work. Is the output good enough to send with minor edits? If you find yourself rewriting the majority of it, your process documentation is missing steps or your output format is underspecified.
+
+**Boundary test:** Try to push the skill beyond its scope. Ask it to handle a task adjacent to what it was built for. Does it stay in its lane, or does it try to do too much? A well-scoped skill should either execute its task or explicitly tell the user it is outside its scope.
+
+Where do boundary statements go? Add them to the activation conditions section of your SKILL.md body: "This skill produces a structured question bank. It does NOT draft outreach emails or generate proposals."
+
+## The Three Questions Test
+
+Not every repeating task deserves a skill. The three questions test catches the tasks that look like skill candidates but are not.
+
+**Discovery call prep passes.** You do it multiple times a week, you follow a consistent process (research prospect, match use cases, draft questions), and a new SE would need explicit guidance to do it your way rather than a generic version.
+
+**Ad-hoc customer emails fail.** The task recurs, but the process does not. A renewal risk email to a frustrated enterprise customer requires different judgment than a check-in email to a healthy account. Encoding one process would produce the wrong output half the time. This is a task that benefits from a template or a checklist, not a full skill.
+
+The test is not about whether Claude can help with the task. Claude can help with almost anything. The test is about whether packaging it as a skill produces better results than a direct prompt.
+
+<Callout type="example">
+Discovery call prep: passes all three questions (recurring, consistent process, requires domain knowledge). Ad-hoc customer emails: fails question two — the process shifts too much per situation to encode reliably as a skill.
+</Callout>
+
+## Common Mistakes
+
+Most skill problems can be traced back to one of five mistakes made during the creation process:
+
+- **Writing the trigger too broadly.** A trigger like "use this for any customer communication" will fire constantly and inappropriately. Tight triggers with specific phrases prevent this.
+- **Documenting the what, not the how.** "Prepare a summary of the meeting" tells Claude nothing. "Write a three-section summary: key decisions, open questions, and next steps with owners and dates" gives it something to work with.
+- **Putting everything in SKILL.md.** Reference material, background context, and example libraries belong in dedicated files. A bloated SKILL.md burns context budget and becomes hard to maintain.
+- **Skipping the boundary test.** Skills that try to do too much produce inconsistent results. Test the edges before you deploy.
+- **Testing only on easy cases.** A discovery call skill that works for a clean SaaS deal and fails on a messy financial services prospect is not ready. Test on the hard cases in your pipeline.
+
+In the next lesson, we'll build a real skill end-to-end — walking through all six steps with actual output at each stage.
+
+<KnowledgeCheck
+  question="Which of the following tasks is the BEST candidate for a skill based on the three questions test?"
+  options={[
+    "Writing a renewal risk email for a frustrated enterprise customer",
+    "Preparing discovery questions before every prospect call",
+    "Crafting a one-time executive briefing for a new logo deal",
+    "Brainstorming creative demo themes for a specific account"
+  ]}
+  correct={1}
+  explanation="Discovery call prep recurs multiple times a week, follows a consistent process, and requires domain knowledge a new SE would need explicit guidance on — all three questions pass. The others either don't recur consistently or vary too much per situation to encode reliably."
+/>
+
+<KnowledgeCheck
+  question="A skill's trigger description should be written in which format?"
+  options={[
+    "First-person: 'Use this skill when you need to prepare discovery questions'"
+    ,
+    "Second-person: 'You should use this skill to prepare for prospect calls'"
+    ,
+    "Third-person: 'This skill should be used when the user asks to prepare discovery questions'"
+    ,
+    "Imperative: 'Prepare discovery questions using this skill'"
+  ]}
+  correct={2}
+  explanation="The trigger description must use third-person format — 'This skill should be used when...' — because Claude reads this field as a signal about when to activate the skill, not a direct command to the user."
+/>
+
+<KeyTakeaways
+  items={[
+    "Skill creation is a documentation exercise, not a creative one — you are encoding an existing process, not inventing a new one.",
+    "The three questions test (recurring, consistent process, requires domain knowledge) filters out tasks that look like skill candidates but aren't.",
+    "Trigger descriptions must use third-person format and include 3-5 specific quoted phrases that reflect how people naturally describe the task.",
+    "Process steps must be imperative and specific enough that Claude knows what to produce and how to evaluate whether it did it correctly.",
+    "Reference material, scripts, and templates belong in dedicated resource directories — not in SKILL.md — to keep context costs lean."
+  ]}
+/>
+
+<SelfAssessment
+  items={[
+    "I can apply the three questions test to evaluate whether a repeating task deserves a skill.",
+    "I can write a trigger description in correct third-person format with specific quoted phrases.",
+    "I can document a process in imperative, step-by-step form with enough specificity for Claude to follow.",
+    "I can identify which supporting material belongs in references/, scripts/, and assets/ versus SKILL.md."
+  ]}
+/>
