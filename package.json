@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx tsx scripts/build-search-index.ts && next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "fuse.js": "^7.1.0",
     "geist": "^1.7.0",
     "gray-matter": "^4.0.3",
     "next": "16.1.6",
