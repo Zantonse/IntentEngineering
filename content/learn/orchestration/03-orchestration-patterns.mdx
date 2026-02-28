@@ -1,0 +1,225 @@
+---
+title: "Orchestration Patterns"
+description: "Six reusable orchestration patterns — sequential pipeline, routing, parallel fan-out, conditional branching, human-in-the-loop checkpoints, and error recovery — with SE examples for each."
+order: 3
+module: "orchestration"
+---
+
+## The Pattern Library
+
+Not every workflow is a simple linear chain. Real SE work involves parallel tasks, decision points, human review steps, and error recovery. Knowing which shape to reach for — and when — is what separates a workflow that works once from one you can rely on.
+
+Lesson 1 introduced the six core patterns. This lesson goes deep on each one: when to use it, what it looks like in an SE context, and what to watch out for. Most production workflows combine several of them. Start by understanding each one individually before mixing them together.
+
+<Callout type="key">
+Anthropic's guiding principle: start with the simplest solution. Only add multi-agent or multi-pattern complexity when a simpler approach demonstrably fails. A linear pipeline that works reliably is better than an intricate orchestration graph that is fragile under real conditions.
+</Callout>
+
+## Pattern 1: Sequential Pipeline
+
+The simplest pattern. Steps execute one after another, each consuming the previous step's output. This is the prompt chaining pattern — the output of each prompt becomes the input of the next.
+
+**When to use:** The output of each step is required input for the next. There are no branches or parallel paths.
+
+**SE example:** The post-call follow-up pipeline from Lesson 2 — transcribe the recording, extract action items, draft the follow-up email, then update the CRM. Each step depends on the previous one completing. You cannot draft the follow-up before you have extracted the action items.
+
+**Key consideration:** Sequential pipelines are only as fast as their slowest step. If one step takes five minutes, the whole chain waits. That is acceptable when steps are genuinely dependent. It is a problem when they are not — which is where parallel fan-out helps.
+
+## Pattern 2: Routing
+
+Classify the input and direct it to the right handler. A routing step reads what is coming in and selects the appropriate skill or pipeline to handle it.
+
+**When to use:** Multiple workflow types share a common entry point. The right path depends on what the input actually is.
+
+**SE example:** A single trigger — "process this inbound request" — routes differently depending on content. If it is a post-call recording, route to the post-call pipeline. If it is an attached RFP document, route to the RFP pipeline. If it is a discovery brief, route to the demo prep pipeline. The routing step does the classification; the downstream pipelines do the work.
+
+```
+Inbound Request
+    ↓
+[request-classifier]
+    ↓
+  ┌─────────────────────┬─────────────────┐
+  │                     │                  │
+Post-call recording  RFP document     Discovery brief
+  │                     │                  │
+[post-call pipeline] [rfp pipeline]  [demo-prep pipeline]
+```
+
+<Callout type="tip">
+Keep routing conditions simple and data-driven. A condition like "does the input contain an attached PDF with the word 'Request for Proposal'?" is easy to evaluate and easy to debug. Fuzzy, overlapping conditions — where it is not clear which path wins — become hard to trace when something routes incorrectly.
+</Callout>
+
+**Key consideration:** Keep routing conditions simple and data-driven. A condition like "does the input contain an attached PDF with the word 'Request for Proposal'?" is easy to evaluate and easy to debug. Fuzzy, overlapping conditions — where it is not clear which path wins — become hard to trace when something routes incorrectly.
+
+## Pattern 3: Parallel Fan-Out
+
+Multiple steps execute simultaneously on the same input, then results merge before the next step.
+
+**When to use:** Multiple independent analyses need to happen on the same data. The steps do not depend on each other's output — they only depend on the shared input.
+
+**SE example:** After parsing an RFP, you can simultaneously run capability matching, compliance checking, and competitive analysis. All three read the same parsed requirements. None of them need to wait for the others. Results merge before the drafting step begins.
+
+```
+            ┌─→ [capability-matcher]   ─┐
+Parsed  ────┼─→ [compliance-checker]  ──┼─→ [merge] → [response-drafter]
+Requirements└─→ [competitive-analysis] ─┘
+```
+
+Running these three in parallel instead of sequence can cut analysis time significantly.
+
+The **merge step** receives all branch outputs and combines them. For structured data, concatenate or deduplicate — the compliance checker's flagged requirements can be appended to the capability matrix before drafting. For analytical outputs, use a synthesis skill that reads all branch results and produces a unified summary, noting where branches agree or conflict. The key is that the merge step knows exactly what shape each branch produces, so it can combine them without ambiguity.
+
+<Details title="Map-reduce variant of parallel fan-out">
+
+When you need to process many items in parallel — scoring 50 RFP requirements individually, or running the same analysis across 20 competitor mentions — the map-reduce pattern applies. Map sends each item to the same skill in parallel. Reduce aggregates all results. This is parallel fan-out applied to a list rather than to different analysis types.
+
+This variant is especially useful when the number of items is variable and you want consistent processing across all of them without knowing the count upfront. Each item is treated identically by the same skill; the reduce step just collects and formats the outputs.
+
+</Details>
+
+**Key consideration:** Fan-out reduces total time but increases complexity. Make sure each branch produces a well-defined output that the merge step can combine. If branches produce inconsistent formats, the merge step becomes a debugging problem rather than a synthesis step.
+
+## Pattern 4: Conditional Branching
+
+Steps execute based on conditions in the data. Not every path runs every time.
+
+**When to use:** The workflow needs to adapt based on what it discovers. Different inputs require different processing.
+
+**SE example:** During post-call processing, if the prospect mentioned specific compliance requirements — SOC 2, HIPAA, GDPR — route to a compliance-check skill before drafting the follow-up. If no compliance topics came up, skip directly to drafting. The same trigger, different paths depending on what the data contains.
+
+```
+Action Items → [check-compliance-mentions]
+                    │
+              ┌─────┴─────┐
+              │            │
+          Has compliance   No compliance
+              │            │
+    [compliance-checker]   │
+              │            │
+              └─────┬──────┘
+                    │
+          [follow-up-composer]
+```
+
+**Key consideration:** Keep conditions simple and verifiable. "Does the transcript contain SOC 2, HIPAA, or GDPR?" is unambiguous. Conditions that require interpretation — "is this a high-risk deal?" — introduce variability. If your branching logic needs documentation to understand, simplify it. Complex nested conditions become hard to trace when something takes an unexpected path.
+
+<KnowledgeCheck
+  question="You need to run capability matching, compliance checking, and competitive analysis on the same parsed RFP. None of these analyses depends on the others. Which pattern is most appropriate?"
+  options={[
+    "Sequential Pipeline — run them one after another to keep things simple",
+    "Conditional Branching — only run the analyses that apply to this specific RFP",
+    "Parallel Fan-Out — run all three simultaneously and merge results before drafting",
+    "Routing — classify the RFP type and send it to the appropriate analysis pipeline"
+  ]}
+  correct={2}
+  explanation="Parallel Fan-Out is the right choice when multiple independent analyses need to run on the same input. Since capability matching, compliance checking, and competitive analysis all read from the same parsed requirements and none depends on the others' output, running them simultaneously cuts total time significantly compared to sequential execution."
+/>
+
+## Pattern 5: Human-in-the-Loop Checkpoint
+
+The workflow pauses at defined points for human review before continuing.
+
+**When to use:** High-stakes outputs that need human judgment before proceeding. Anything customer-facing or legally significant.
+
+**SE example:** In the RFP pipeline, after drafting responses but before final compilation, the workflow pauses for SE review. You check the responses for accuracy, adjust the tone for the specific prospect, and approve before the final formatting step runs. The automation handles the research and drafting. You handle the judgment call.
+
+<Callout type="warning">
+A practical rule for checkpoints: pause before anything goes external. Before the email sends to the customer. Before data writes to the CRM. Before a proposal is formatted for delivery. The cost of a checkpoint is a few minutes of review time. The cost of skipping one is a bad email to a prospect or incorrect data in your CRM.
+</Callout>
+
+**Key consideration:** Checkpoints add friction but reduce risk. Use them at high-impact decision points — not after every step. A practical rule: checkpoint before anything goes external. Before the email sends to the customer. Before data writes to the CRM. Before a proposal is formatted for delivery. The cost of a checkpoint is a few minutes of review time. The cost of skipping one is a bad email to a prospect.
+
+## Pattern 6: Error Recovery
+
+Handling failures gracefully when a step fails or produces unexpected output.
+
+**When to use:** Every production workflow. Things go wrong — APIs fail, data is missing, output is malformed. The question is not whether failures will happen; it is whether your workflow handles them or falls apart.
+
+**SE example:** The CRM updater step fails because the API is down. Without error recovery, you lose all the work from the previous steps. With it: the workflow captures the completed outputs from all previous steps, logs the failure with detail, retries with exponential backoff, and — if retries fail — falls back to a manual notification: "CRM update failed. Here is the data to enter manually." The follow-up email still goes out. Nothing is lost.
+
+Three error strategies:
+
+- **Retry** — Try the step again. Good for transient failures like API timeouts where the problem is temporary.
+- **Fallback** — Use an alternative approach. Good for when a specific tool is unavailable and a substitute can do the job.
+- **Graceful degradation** — Complete what you can, flag what you cannot. Good for non-critical steps where partial output is still useful.
+
+<Details title="Handling timeouts in production workflows">
+
+For workflows involving external APIs or human checkpoints, always set timeouts. A step that never completes is worse than one that fails — at least a failure triggers error recovery. A step waiting indefinitely blocks the entire pipeline and produces no output.
+
+Treat timeout as a failure mode and handle it the same way you would a hard error: retry, fallback, or graceful degradation depending on whether the step is critical.
+
+Decide upfront which steps are critical versus optional. A critical step must succeed for the workflow to produce useful output. An optional step adds value but the workflow is still valuable without it. CRM update failing should not block delivering the follow-up email. Labeling criticality before you build saves you from making that decision under pressure when something breaks in production.
+
+</Details>
+
+**Key consideration:** Decide upfront which steps are critical versus optional. A critical step must succeed for the workflow to produce useful output. An optional step adds value but the workflow is still valuable without it. CRM update failing should not block delivering the follow-up email. Labeling criticality before you build saves you from making that decision under pressure when something breaks in production.
+
+## Bonus Pattern: Evaluator-Optimizer
+
+A feedback loop where one skill generates output and another evaluates it against defined criteria. If the output fails the evaluation, the generator runs again with the evaluator's feedback. The loop continues until the output passes or a maximum iteration count is reached.
+
+**SE example:** Draft an RFP response section, then evaluate it against compliance requirements. If the evaluator flags missing evidence or overly vague claims, pass the feedback back to the drafter with specific instructions: "The security section does not address SOC 2 audit frequency — regenerate with explicit coverage of annual third-party audits." The drafter produces a revised response; the evaluator checks again. After two or three iterations, the output typically meets the bar.
+
+```
+[response-drafter] → Draft
+        ↑                ↓
+   (feedback)    [compliance-evaluator]
+        │                ↓
+        └──── Fails ─── Pass?
+                              ↓
+                         [final output]
+```
+
+<Callout type="tip">
+The evaluator-optimizer pattern adds latency with each iteration loop. Use it when the quality bar is high and consistent — RFP responses, technical whitepapers, anything requiring verifiable accuracy. Do not apply it to tasks where a good-enough first pass is acceptable and speed matters more than polish.
+</Callout>
+
+This pattern is powerful but adds latency. Use it when the quality bar is high and consistent — RFP responses, technical whitepapers, anything that requires verifiable accuracy. Do not use it for tasks where "good enough on first pass" is acceptable and speed matters.
+
+## Choosing the Right Pattern
+
+Most real workflows combine multiple patterns. An RFP pipeline might use sequential pipeline for the main flow, parallel fan-out for the analysis phase, conditional branching for compliance topics, a human checkpoint before finalization, and error recovery throughout. That is not over-engineering — that is the natural shape of the problem.
+
+Start simple. Build the sequential pipeline first. Then add complexity only when you hit real limitations, not hypothetical ones.
+
+When you are ready to add a pattern, use this decision guide:
+
+- **Start with:** Sequential Pipeline — always
+- **Add routing when:** multiple workflow types share a common entry point
+- **Add fan-out when:** you have two or more independent analyses on the same input
+- **Add conditionals when:** you find yourself running unnecessary steps on inputs that do not need them
+- **Add checkpoints when:** the output is customer-facing or high-stakes
+- **Add error handling when:** moving to production use
+- **Add evaluator-optimizer when:** quality must meet a verifiable bar and first-pass output is consistently insufficient
+
+<KnowledgeCheck
+  question="Which error recovery strategy is most appropriate when a workflow step fails due to an API timeout that is likely temporary?"
+  options={[
+    "Graceful degradation — complete what you can and flag the failure",
+    "Fallback — switch to an alternative tool or approach",
+    "Retry — try the step again, since the problem is likely transient",
+    "Skip the step entirely and continue to the next one"
+  ]}
+  correct={2}
+  explanation="Retry is the appropriate strategy for transient failures like API timeouts where the underlying problem is temporary. Retrying with exponential backoff gives the external system time to recover. Fallback is better when a specific tool is unavailable and a substitute exists. Graceful degradation is for non-critical steps where partial output is still useful."
+/>
+
+## What's Next
+
+You have now built individual skills, tested them, and learned how to compose them into orchestrated workflows using these patterns. In the final module, we will zoom out to the full picture: intent engineering — designing complete systems with goals, constraints, memory, and evaluation that tie everything together.
+
+<KeyTakeaways items={[
+  "Always start with the Sequential Pipeline — add other patterns only when a simpler approach demonstrably fails.",
+  "Parallel Fan-Out runs independent analyses simultaneously and merges results; it reduces total time but requires each branch to produce a well-defined, consistent output shape.",
+  "Conditional Branching adapts the workflow to data — keep conditions simple and verifiable to avoid hard-to-trace routing errors.",
+  "Human-in-the-Loop Checkpoints should fire before anything goes external — customer emails, CRM writes, or finalized proposals — not after every step.",
+  "Error Recovery requires deciding upfront which steps are critical (must succeed) versus optional (workflow still valuable without them), and handling failures with retry, fallback, or graceful degradation accordingly."
+]} />
+
+<SelfAssessment items={[
+  "I can identify which orchestration pattern to apply given a description of a workflow's requirements.",
+  "I can explain the merge step in Parallel Fan-Out and describe what makes it succeed or fail.",
+  "I can place Human-in-the-Loop Checkpoints at the right points in a workflow and justify the placement.",
+  "I can distinguish between retry, fallback, and graceful degradation, and choose the right one for a given failure scenario."
+]} />

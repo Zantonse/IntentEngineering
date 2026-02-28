@@ -1,0 +1,255 @@
+---
+title: "Building Multi-Step Workflows"
+description: "Two complete workflow walkthroughs — post-call follow-up and RFP response pipelines — showing how skills chain together with state passing between steps."
+order: 2
+module: "orchestration"
+---
+
+## From Theory to Practice
+
+We covered what orchestration is and why it matters for SE work. Now we build. Two real workflows, step by step, using skills from Module 2 as building blocks. The goal is concrete: by the end of this lesson, you should be able to design a multi-step workflow for any repeatable SE task and articulate exactly what data flows between each step.
+
+These are not toy examples. Post-call follow-up and RFP response are two of the highest-frequency, highest-stakes tasks an SE handles. Getting them right — consistently, at volume — is a significant leverage point.
+
+## From Single Skills to Decomposed Workflows
+
+Before building the workflows, it is worth being explicit about the shift in approach.
+
+<Callout type="key">
+Orchestration requires decomposing a broad skill into focused, single-purpose skills — each doing one thing well. This is not just organizational preference: it makes each step easier to test, replace, and reuse across multiple workflows.
+</Callout>
+
+In Module 2, `post-call-followup` was a single skill. That skill handled everything in one pass: extracting discussion points, identifying action items, drafting the follow-up email, and preparing CRM notes. It worked — but it was doing four distinct jobs inside a single SKILL.md. For orchestration, we decompose it into four focused skills, each doing one thing well:
+
+- `meeting-transcriber` — converts raw audio or notes into structured text
+- `action-item-extractor` — pulls commitments and owners from the transcript
+- `follow-up-composer` — drafts the customer-facing email from the action items
+- `crm-updater` — formats and writes notes to the CRM from the email and action items
+
+The same decomposition applies to `rfp-response`. In Module 2, the skill walked through parsing, matching, drafting, and reviewing inside a single process. For orchestration, we separate those into:
+
+- `rfp-parser` — converts a document into a structured requirements list
+- `capability-matcher` — maps each requirement to product features and flags gaps
+- `response-drafter` — generates draft answers section by section
+- `response-reviewer` — checks consistency, tone, and completeness before submission
+
+This decomposition is not just an organizational preference. It makes each step easier to test, easier to replace, and easier to reuse in other workflows. The `capability-matcher` skill can feed a demo preparation pipeline just as easily as it feeds the RFP pipeline.
+
+## Workflow 1: Post-Call Follow-Up Pipeline
+
+This workflow uses the **Sequential Pipeline** pattern from Lesson 1. After every prospect call, you need to capture what happened, extract next steps, communicate with the prospect, and update internal systems. That is four distinct tasks. Each one is a skill. Connected in sequence, they become a pipeline that runs start to finish without you stitching outputs together manually.
+
+### Step 1: Transcribe Meeting
+
+- **Skill:** `meeting-transcriber`
+- **Input:** Meeting recording or rough notes
+- **Output:** Structured transcript with speaker labels
+
+```
+## Input: Raw audio file or unstructured call notes
+## Output: Structured transcript with speaker labels, timestamps, and paragraph breaks
+```
+
+This step converts raw audio or rough notes into structured text that downstream steps can parse reliably. The output is not just a wall of text — it is a formatted transcript with speaker attribution, timestamps where available, and clear paragraph breaks. Structure here pays dividends in every step that follows.
+
+### Step 2: Extract Action Items
+
+- **Skill:** `action-item-extractor`
+- **Input:** Structured transcript (from Step 1)
+- **Output:** List of action items, each with an owner, deadline, and description
+
+```
+## Input: Structured transcript with speaker labels
+## Output: Action items list with owner, deadline, and description for each item
+```
+
+This step consumes the output of Step 1 directly. No manual copy-paste, no reformatting. The structured transcript gives the extractor enough context to identify commitments, assign them to the right people, and infer deadlines from phrases like "by end of week" or "before the next call." The output is a clean, enumerated list — ready to be consumed by the next step.
+
+### Step 3: Draft Follow-Up Email
+
+- **Skill:** `follow-up-composer`
+- **Input:** Action items list (from Step 2)
+- **Output:** Professional follow-up email draft
+
+```
+## Input: Action items list with owners and deadlines
+## Output: Follow-up email draft referencing specific commitments and proposing next steps
+```
+
+The follow-up email references specific action items, confirms deadlines, and proposes next steps. Notice the **input contract** here: this skill receives the extracted action items list, not the full transcript. It does not need the full transcript. It needs the structured output of Step 2. Passing only what is relevant keeps the skill's context focused and its output precise.
+
+### Step 4: Update CRM
+
+- **Skill:** `crm-updater`
+- **Input:** Follow-up email draft + action items list (from Steps 2 and 3)
+- **Output:** Updated CRM record with meeting notes, next steps, and follow-up status
+
+```
+## Input: Action items list (Step 2) and follow-up email draft (Step 3)
+## Output: CRM-formatted record with meeting notes, owners, and follow-up status
+```
+
+This step is the exception to the "pass only the previous output" rule. The CRM update needs both the action items (for next steps and owner assignments) and the email draft (to log what was communicated). When a step genuinely needs outputs from multiple earlier steps, that is fine — the key is being explicit about which outputs it consumes and why.
+
+Here is the complete state flow for this pipeline:
+
+```
+Meeting Recording
+    ↓
+[meeting-transcriber] → Structured Transcript
+    ↓
+[action-item-extractor] → Action Items List
+    ↓
+[follow-up-composer] → Follow-Up Email Draft
+    ↓
+[crm-updater (takes Steps 2+3)] → Updated CRM Record
+```
+
+Each step only receives what it needs. The follow-up composer does not get the raw recording from Step 1. It gets the action items list from Step 2. This is intentional. Passing only the relevant output keeps each skill's context clean and focused — and makes the pipeline easier to debug when something goes wrong.
+
+<KnowledgeCheck
+  question="In the post-call pipeline, why does the follow-up-composer skill receive the action items list from Step 2 rather than the full transcript from Step 1?"
+  options={[
+    "Because the transcript is too large to pass to the next step",
+    "Because passing only the relevant output keeps the skill's context focused and its output precise",
+    "Because the follow-up-composer skill cannot read transcripts",
+    "Because Step 1 output is automatically deleted after Step 2 runs"
+  ]}
+  correct={1}
+  explanation="Passing only the relevant output — the action items list rather than the full transcript — keeps the follow-up-composer's context clean and focused on what it actually needs. This improves output precision and makes the pipeline easier to debug when something goes wrong."
+/>
+
+## Workflow 2: RFP Response Pipeline
+
+RFPs are the highest-stakes documents an SE touches. A single missed requirement can cost a deal. This workflow again uses the **Sequential Pipeline** pattern, but in Lesson 3 you will see how to extend it with **Parallel Fan-Out** for the analysis phase.
+
+### Step 1: Parse Requirements
+
+- **Skill:** `rfp-parser`
+- **Input:** RFP document
+- **Output:** Structured requirements list with categories and priorities
+
+```
+## Input: RFP document (PDF or text)
+## Output: Requirements matrix with category, priority, and evaluation criteria per item
+```
+
+Converts a 50-page PDF into an actionable, structured requirement set. The parser categorizes requirements (security, integration, compliance, pricing), flags mandatory versus preferred, and surfaces the evaluation criteria. What comes out is a requirements matrix — something downstream steps can work with programmatically, not a document.
+
+### Step 2: Match Capabilities
+
+- **Skill:** `capability-matcher`
+- **Input:** Structured requirements (from Step 1)
+- **Output:** Capability matrix mapping requirements to product features, with gap identification
+
+```
+## Input: Requirements matrix from rfp-parser
+## Output: Capability matrix with status (yes/partial/gap) and supporting evidence per requirement
+```
+
+This step is where your product knowledge gets applied systematically. The capability matcher takes the requirements list and maps each item to a specific product feature, documentation reference, or case study. Critically, it also flags gaps — requirements the product does not meet natively — so you know exactly where you need to craft a careful response versus a confident one.
+
+### Step 3: Draft Responses
+
+- **Skill:** `response-drafter`
+- **Input:** Capability matrix (from Step 2)
+- **Output:** Draft response for each requirement section
+
+```
+## Input: Capability matrix with status and evidence
+## Output: Draft response per section — confident for matches, honest framing for gaps
+```
+
+With the capability matrix in hand, the response drafter generates a first-pass answer for each requirement. Strong matches get confident, specific responses with supporting evidence. Gaps get honest framing that acknowledges limitations while emphasizing compensating strengths. The draft is structured section by section — ready for review, not for immediate submission.
+
+### Step 4: Review and Finalize
+
+- **Skill:** `response-reviewer`
+- **Input:** Draft responses (from Step 3)
+- **Output:** Final reviewed RFP response, ready for submission
+
+```
+## Input: Draft responses structured by RFP section
+## Output: Reviewed final response with consistency checks, tone adjustments, and completeness verification
+```
+
+The reviewer checks for consistency, flags any responses that are too vague or too aggressive, ensures tone is appropriate, and verifies that every requirement in the original RFP has a corresponding response. This is the quality gate before anything leaves your hands.
+
+```
+RFP Document
+    ↓
+[rfp-parser] → Parsed Requirements Matrix
+    ↓
+[capability-matcher] → Capability Matrix with Gap Flags
+    ↓
+[response-drafter] → Draft Responses by Section
+    ↓
+[response-reviewer] → Final RFP Response
+```
+
+## State Passing Between Steps
+
+The critical concept in multi-step workflows is **state passing** — how data flows from one step to the next. Each step defines an explicit **input contract** (what it expects to receive) and an **output contract** (what it produces). When step outputs match the next step's inputs, the pipeline flows smoothly. When they do not, you get garbage in and garbage out, just delayed by a few steps.
+
+<Callout type="key">
+Think of input and output contracts as the API between skills. A skill that produces a precisely defined output shape — "a structured list of action items, each with an owner field, a deadline field, and a description field" — connects cleanly to any downstream skill expecting that shape. Vague contracts produce unreliable pipelines.
+</Callout>
+
+In Claude Code, there are three practical strategies for managing state between steps:
+
+**Conversation context** — The most common approach. Each skill's output lands in the conversation history, and the next skill can reference it directly. This works well for workflows that complete within a single session.
+
+**File-based intermediates** — For longer workflows or those with parallel branches, write intermediate outputs to files: a `parsed-requirements.md`, an `action-items.md`, a `capability-matrix.md`. Each downstream step reads the file rather than relying on conversation history. This is more durable and easier to inspect when debugging.
+
+**Structured JSON** — When steps need to exchange data that will be parsed programmatically, define a JSON schema for the output. A step that produces `{ "requirements": [...], "priority_flags": [...] }` is more reliably consumed by the next step than one that produces a prose summary. For workflows connected to MCP servers or external systems, structured JSON is usually required.
+
+<Details title="Three rules for clean state passing">
+
+1. **Be explicit about data shape.** Do not pass "results" — pass "a structured list of action items, each with an owner, deadline, and description." The more precisely you define the output contract, the more reliably the next step can consume it.
+
+2. **Pass only what is needed.** Step 3 does not need the raw recording from Step 1. It needs the action items from Step 2. Bloated context degrades output quality and makes debugging harder.
+
+3. **Define failure modes.** What happens if Step 2 produces zero action items? What if the RFP parser cannot identify any requirements? The pipeline should handle those cases explicitly — route to a fallback, surface a warning, or halt with a clear error — not crash silently or produce confidently wrong output.
+
+</Details>
+
+Think of input and output contracts as the API between skills. A skill that produces "a structured list of action items, each with an owner field, a deadline field, and a description field" can connect cleanly to any downstream skill that expects that shape. A skill that produces "some notes about the call" cannot. The specificity of your contracts determines the reliability of your pipeline.
+
+<Callout type="warning">
+Failing to define failure modes is one of the most common workflow design oversights. If Step 2 produces zero action items, a pipeline with no failure handling will either crash or pass an empty list silently to Step 3, producing a confidently drafted email about nothing. Always decide upfront what each step should do when its expected input is missing or malformed.
+</Callout>
+
+<KnowledgeCheck
+  question="Which state-passing strategy is most appropriate when a workflow has parallel branches that need to share intermediate results?"
+  options={[
+    "Conversation context, because it is the most common approach",
+    "File-based intermediates, because they are more durable and each branch can read from a shared file",
+    "Structured JSON, because it requires a defined schema",
+    "No strategy is needed — parallel branches automatically share state"
+  ]}
+  correct={1}
+  explanation="File-based intermediates are the right choice for workflows with parallel branches. Writing intermediate outputs to named files (like parsed-requirements.md) means each branch can read from a stable, inspectable source rather than relying on conversation history, which may not be visible to all branches. This approach is also easier to debug."
+/>
+
+## Try It Yourself
+
+The best way to internalize workflow design is to work with the workflows you just read. Use the editor below to explore the post-call and RFP workflows, or extend one of them — add a compliance-check branch to the post-call pipeline, or insert a parallel competitive analysis step into the RFP workflow. Watch how the structure forces you to be precise about what each step actually does and what data it needs.
+
+<OrchestrationFlowEditor />
+
+The next lesson goes deeper on orchestration patterns — specifically how to handle branching, parallelism, and conditional logic when your workflows need to do more than run in a straight line.
+
+<KeyTakeaways items={[
+  "Decompose broad skills into focused, single-purpose skills before orchestrating — each skill should do one thing well and produce a precisely defined output.",
+  "Every step in a pipeline has an input contract (what it expects) and an output contract (what it produces) — mismatched contracts cause failures that are delayed and hard to debug.",
+  "Three state-passing strategies: conversation context (single-session workflows), file-based intermediates (longer workflows and parallel branches), and structured JSON (programmatic consumption or MCP integration).",
+  "Pass only what a step needs — not the full accumulated context — to keep each skill's output focused and the pipeline easy to debug.",
+  "Always define failure modes explicitly: what happens when a step receives empty input, missing data, or produces malformed output?"
+]} />
+
+<SelfAssessment items={[
+  "I can decompose a multi-task skill into focused, single-purpose skills and describe what each one produces.",
+  "I can trace the state flow through both the post-call and RFP pipelines, naming the input and output of each step.",
+  "I can choose the appropriate state-passing strategy (conversation context, file-based, or structured JSON) for a given workflow scenario.",
+  "I can articulate what failure modes to define for a pipeline step and how to handle them."
+]} />

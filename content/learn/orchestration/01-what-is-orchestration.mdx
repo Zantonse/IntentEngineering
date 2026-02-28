@@ -1,0 +1,122 @@
+---
+title: "What Is Orchestration?"
+description: "How individual skills compose into multi-step workflows — the primitives, patterns, and mental model for building systems that are greater than the sum of their parts."
+order: 1
+module: "orchestration"
+---
+
+## From Skills to Workflows
+
+Individual skills are powerful, but real SE work rarely fits neatly into a single skill. A discovery call leads to a demo, which leads to a follow-up, which leads to an RFP response. Each step's output feeds the next step's input. The call recording becomes the action item list. The action item list becomes the follow-up email. The follow-up email triggers a CRM update. These are not isolated tasks — they are a chain.
+
+**Orchestration** is the practice of composing individual skills into multi-step workflows where the output of one step becomes the input of the next. Instead of running skills one at a time and manually stitching results together, you describe the workflow once and let the system execute the full chain.
+
+<Callout type="key">
+Orchestration is the difference between having a collection of skills and having a working agent. Skills give Claude knowledge about individual tasks. Orchestration connects those tasks into a coherent, executable workflow that runs from trigger to final output without manual stitching.
+</Callout>
+
+Anthropic distinguishes two related concepts here: **workflows** are systems where LLM calls and tool use follow a predefined code path you control. **Agents** are systems where the LLM dynamically decides the sequence of steps. Orchestration is primarily about the workflow side — designing that predefined path well, so Claude can execute it reliably. This distinction matters because workflows are more predictable and easier to debug than fully autonomous agents.
+
+The difference between having good skills and having an SE agent is orchestration. Without it, you are the integration layer — copying outputs, reformatting inputs, and keeping track of where you are in the sequence. With orchestration, that coordination work moves to the system. You trigger the workflow; your agent drives it to completion.
+
+## The Claude Code Primitives
+
+Before you can orchestrate, you need to understand what you are composing. Claude Code gives you six building blocks:
+
+- **Skills** — Domain-specific SKILL.md files that encode workflows. These are what we built in Module 2. A skill tells Claude what a workflow looks like: what inputs it needs, what steps to follow, and what output to produce.
+- **Commands** — Quick shortcuts that execute a specific action, like `/commit` or `/review-pr`. Commands are entry points. They let you trigger a defined behavior with minimal friction. Note: in current Claude Code, commands and skills share the same trigger namespace — a file at `.claude/commands/review.md` and a skill at `.claude/skills/review/SKILL.md` both create `/review`. Commands are now effectively a legacy alias for the same mechanism.
+- **Agents** (officially called subagents) — Autonomous subprocesses that handle complex multi-step tasks independently. An agent can run a long-running workflow, operate in the background, or parallelize work across multiple simultaneous threads. The official Anthropic documentation uses the term "subagents" for these spawned processes.
+- **Agent Teams** — An experimental capability for multi-agent collaboration, where multiple Claude instances coordinate on a shared task. Teammates share a task list and claim work independently; agents can also message each other directly. This is a cooperative model, not a strict top-down orchestrator-worker hierarchy.
+- **Hooks** — Shell commands that fire in response to events: a tool call, the start of a conversation, a file being written. Hooks let you add behavior automatically, without requiring an explicit trigger in every prompt.
+- **MCP Servers** — External services that provide additional tools and context. Salesforce, Jira, Notion, your internal APIs — MCP servers connect Claude to the systems where your work actually lives. For SEs, this means orchestration can span real business systems: CRM records and opportunity data, email and calendar, call recordings, and your knowledge base. An orchestrated workflow is no longer limited to local files — it can read live account context, write CRM notes, and pull from institutional knowledge, all within a single triggered workflow.
+
+<Callout type="tip">
+The six primitives fall into three layers: Skills are the **knowledge layer** (what to do), Commands/Hooks/Agents are the **execution layer** (how things get triggered and run), and MCP Servers are the **integration layer** (connection to external systems). When designing a workflow, identify which layer each component belongs to before wiring them together.
+</Callout>
+
+These building blocks fall into three layers. Skills are the **knowledge layer** — they encode what to do. Commands, hooks, and agents are the **execution layer** — they control how things get triggered and run. MCP servers are the **integration layer** — they connect Claude to external systems. Orchestration ties all three layers together into a coherent workflow.
+
+## State Management
+
+One concept that appears throughout orchestration is **state** — the data that accumulates as a workflow progresses. In Claude Code, state passes through the conversation context. Each skill's output becomes part of the conversation history that the next skill can reference. For file-based workflows, intermediate outputs can also be written to files — a `parsed-requirements.md` that the next skill reads, or an `action-items.md` that persists even if the conversation context shifts.
+
+<Callout type="warning">
+State visibility is not automatic. A skill running in a parallel branch can only see the shared input it branched from — not what the other parallel branch produced. Assuming shared state across parallel branches is one of the most common workflow design mistakes. Always map state flow explicitly before building.
+</Callout>
+
+Understanding where state lives matters because it determines what each step can see. A skill that runs late in a pipeline can reference everything produced earlier. A skill that runs in a parallel branch can only see the shared input it branched from — not what the other branch produced. Good workflow design makes state flow explicit rather than implicit.
+
+## Six Orchestration Patterns
+
+The following six patterns draw on Anthropic's workflow taxonomy and extend it for SE use cases. Anthropic's "Building Effective Agents" guide describes five workflow patterns — prompt chaining, routing, parallelization, orchestrator-workers, and evaluator-optimizer. This course adapts and extends those into six SE-focused patterns.
+
+There are six fundamental patterns for how skills compose. We will go deep on each in Lesson 3, but here is the map you will be working with throughout this module:
+
+**1. Sequential Pipeline** (also called prompt chaining) — Steps execute one after another, each consuming the previous step's output. The post-call follow-up is a natural pipeline: transcribe the recording, extract action items, draft the follow-up email, update the CRM. This is the baseline pattern — start here before adding anything else.
+
+**2. Routing** — Classify input and direct it to the right handler. Claude reads the intent of a request and picks the matching skill from what is available. If the input is a new RFP, route to the RFP pipeline. If it is a follow-up request, route to the post-call pipeline. Routing is often the entry point to a larger workflow.
+
+**3. Parallel Fan-Out** — Multiple independent analyses on the same input, with results merged before the next step. After parsing an RFP, you can simultaneously run capability matching, compliance checking, and competitive analysis. None of those three steps depends on the others. Running them in parallel instead of sequence cuts total time significantly.
+
+**4. Conditional Branching** — Steps execute based on conditions in the data, not a fixed sequence. If the prospect mentioned compliance requirements, route to a compliance-check skill before drafting the response. If not, skip it. The workflow adapts to what it discovers rather than running the same path every time.
+
+**5. Human-in-the-Loop Checkpoint** — The workflow pauses at defined points for human review before continuing. Use this at high-stakes moments: before a customer-facing email sends, before data writes to the CRM, before an RFP response is finalized. The automation handles research and drafting. You handle the judgment calls.
+
+**6. Error Recovery** — Retry, fallback, or graceful degradation when a step fails. APIs go down. Data is missing. Output is malformed. Every production workflow needs a strategy for handling failure that does not throw away all the work completed before the failure point.
+
+Most real workflows combine several of these patterns. An RFP response pipeline uses sequential pipelines for the main flow, parallel fan-out for analysis, conditional branching for compliance topics, a human checkpoint before finalization, and error recovery throughout.
+
+<KnowledgeCheck
+  question="What is the key distinction between a workflow and an agent in Anthropic's terminology?"
+  options={[
+    "Workflows use skills; agents use commands",
+    "Workflows follow a predefined code path you control; agents let the LLM dynamically decide the sequence of steps",
+    "Workflows are faster; agents are more accurate",
+    "Workflows require MCP servers; agents do not"
+  ]}
+  correct={1}
+  explanation="Anthropic defines workflows as systems where LLM calls follow a predefined code path you control, while agents are systems where the LLM dynamically decides the sequence of steps. Workflows are more predictable and easier to debug, which is why orchestration focuses primarily on the workflow side."
+/>
+
+## Why This Matters for SEs
+
+SEs live in workflows. The sales cycle is itself a workflow — discovery, demo, technical validation, proposal, close. Each stage has sub-workflows. Post-call work alone involves transcription, action item extraction, email drafting, CRM updates, and internal handoff notes. Without orchestration, you are running each skill manually and stitching the results together by hand. That stitching is not visible work. It does not move deals forward. It is coordination overhead.
+
+With orchestration, a single trigger like "process my call with Acme Corp" can transcribe the recording, extract commitments, draft the follow-up email, update the CRM, and flag any technical risks for the account team. Each of those steps is a skill you have already built. Orchestration is the glue that runs them in sequence, passes data between them, and delivers a complete result rather than a collection of pieces.
+
+Consider RFP response as a second example. A single "respond to this RFP" triggers a pipeline: parse the requirements, match them against your capability library, draft responses for each section, review for consistency, and compile the final document. Each skill does one thing well. The pipeline does everything. The SE's job shifts from execution to review — reading the output, refining the judgment calls, approving the result.
+
+## The Mental Model
+
+Think of skills as functions and orchestration as the program that calls them. A function is useful on its own, but the power comes from composition — calling functions in sequence, passing data between them, handling edge cases, and making decisions along the way. A well-orchestrated system is not a longer prompt. It is an agent with structure: inputs, steps, branching logic, state management, and a defined output.
+
+The goal is not to automate everything. The goal is to build an agent that handles the coordination so your judgment and expertise — which are not automatable — can operate at a higher level. Skills give your agent knowledge. Orchestration gives it the ability to act on that knowledge independently.
+
+<KnowledgeCheck
+  question="Which Claude Code primitive is responsible for connecting Claude to external systems like Salesforce or Jira?"
+  options={[
+    "Hooks",
+    "Skills",
+    "MCP Servers",
+    "Agent Teams"
+  ]}
+  correct={2}
+  explanation="MCP Servers are the integration layer — they connect Claude to external services and tools such as Salesforce, Jira, Notion, and internal APIs. This allows orchestrated workflows to read live CRM data, write notes, and pull from institutional knowledge bases, extending well beyond local files."
+/>
+
+In the next lesson, we will build two complete multi-step workflows from the skills we created in Module 2.
+
+<KeyTakeaways items={[
+  "Orchestration composes individual skills into multi-step workflows where each step's output becomes the next step's input — eliminating manual stitching.",
+  "Claude Code has six primitives organized in three layers: the knowledge layer (Skills), the execution layer (Commands, Hooks, Agents), and the integration layer (MCP Servers).",
+  "State is not automatically shared across all steps — parallel branches can only see the shared input they branched from, not each other's output.",
+  "There are six core orchestration patterns: Sequential Pipeline, Routing, Parallel Fan-Out, Conditional Branching, Human-in-the-Loop Checkpoint, and Error Recovery.",
+  "The goal of orchestration is to move coordination overhead from the SE to the system, so expertise and judgment can operate at a higher level."
+]} />
+
+<SelfAssessment items={[
+  "I can explain the difference between a workflow and an agent in Anthropic's terminology.",
+  "I can name the six Claude Code primitives and identify which layer each belongs to.",
+  "I can describe why state visibility matters in parallel branches and how it affects workflow design.",
+  "I can name all six orchestration patterns and give a brief description of when each is appropriate."
+]} />
