@@ -1,0 +1,265 @@
+---
+title: "Exercise: Building a Verification Skill"
+description: "A hands-on exercise building a fact-checker skill from scratch — demonstrating skill design patterns, verification standards, and the discipline of auditing AI-generated content."
+order: 5
+module: "building-your-agent"
+---
+
+## Why Verification Matters
+
+Every skill you build produces output that someone will act on. A discovery prep skill generates questions an SE asks a CTO. An RFP analyzer scores capabilities that go into a binding proposal. A battlecard contains claims your team repeats in competitive situations.
+
+If any of that output contains hallucinations — fabricated tool names, invented statistics, feature claims that don't match reality — the SE who trusted it loses credibility in front of a prospect. That damage compounds. One wrong claim in an RFP response can disqualify a bid. One fabricated reference in a technical proposal can end a relationship.
+
+<Callout type="warning">
+Verification is not optional polish. It is a core capability your agent needs. In this exercise, you build a skill that audits content for factual accuracy — and in the process, you apply every design pattern from this module.
+</Callout>
+
+## The Skill We're Building
+
+A `fact-checker` skill that:
+- Scans content files for factual claims
+- Classifies each claim by type (verifiable fact, inference, opinion)
+- Attempts verification via web search and documentation checks
+- Generates a structured report with severity ratings and recommendations
+
+This skill is useful beyond this exercise. Run it against your own skill library, your RFP response templates, your competitive battlecards — anything where factual accuracy matters.
+
+## Step 1: Define the Skill Structure
+
+Create the skill directory:
+
+```bash
+mkdir -p .claude/skills/fact-checker
+```
+
+Start with the frontmatter. Apply the design patterns from Lesson 1:
+
+```yaml
+---
+name: fact-checker
+description: This skill should be used when the user asks to
+  "check for hallucinations", "verify facts", "audit content
+  accuracy", "find AI inference", or mentions reviewing content
+  for factual claims, unverified assertions, or made-up references.
+disable-model-invocation: true
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch
+---
+```
+
+<Callout type="key">
+Three design patterns are applied here at once: `disable-model-invocation: true` requires explicit invocation (you don't want automatic fact-checking on every file you open); `allowed-tools` restricts to read-only operations (a fact-checker reports problems, it doesn't fix them); and the trigger description uses specific quoted phrases an SE would actually type.
+</Callout>
+
+Notice three pattern applications:
+
+**`disable-model-invocation: true`** — This is a skill you invoke deliberately, not one that auto-triggers. You don't want Claude fact-checking every file you open. You want it to run when you explicitly ask for an audit.
+
+**`allowed-tools`** — The skill needs to read files (`Read`, `Glob`, `Grep`) and verify claims against the web (`WebSearch`, `WebFetch`). It does not need `Write` or `Edit` — a fact-checker reports problems, it doesn't fix them. Restricting tools to read-only operations is a safety pattern: the skill cannot accidentally modify the content it's auditing.
+
+**Trigger phrases** — The description includes the phrases an SE would actually type: "check for hallucinations," "verify facts," "audit content accuracy." These are third-person format with specific quoted triggers, exactly as covered in Module 1.
+
+## Step 2: Define the Classification System
+
+The body of the skill needs a clear taxonomy for what it's looking for. This is the domain knowledge that Claude doesn't have on its own — the specific categories of factual risk in SE content:
+
+```markdown
+## Classification Categories
+
+**VERIFIABLE FACT** — A specific, checkable claim:
+- Named tools, libraries, or products (do they exist?)
+- URLs or repository references (are they real?)
+- Statistics or numbers with implied sources
+- Feature descriptions of real platforms
+- Dates, version numbers, or release timelines
+
+**INFERENCE** — A reasonable conclusion stated as certainty:
+- Unsourced metrics ("Most SEs save 40-60% of prep time")
+- Causal claims ("because X, Y happens")
+- Superlatives without criteria ("the strongest pattern")
+
+**OPINION AS FACT** — A value judgment without qualification:
+- "The best approach is..." without evidence
+- Rankings without stated criteria
+- Predictions stated as certainties
+```
+
+This classification system is the skill's core intellectual contribution. Claude can read files and search the web on its own. What it cannot do without this skill is apply a consistent severity framework calibrated to the specific risks of SE content — where a fabricated product name costs you a deal, but a soft inference about "typical" time savings is probably fine.
+
+## Step 3: Define the Verification Process
+
+The process section tells Claude what to do with each classified claim:
+
+```markdown
+## Verification Process
+
+1. Read each target file completely
+2. Identify every factual claim
+3. Classify each claim (Verifiable / Inference / Opinion)
+4. For verifiable claims, attempt confirmation:
+   - Tool/product claims: search the web for existence
+   - Statistics: search for the original source
+   - Feature claims: check official documentation
+   - URLs/repos: verify they resolve
+5. Generate a severity-rated report:
+   - HIGH: Likely hallucination or fabrication
+   - MEDIUM: Unverified or unsourced
+   - LOW: Inference stated as fact
+```
+
+## Step 4: Define the Output Format
+
+Specify exactly what the report should look like. This is the "stakeholder-aware output" pattern — the SE reading this report needs to make quick decisions about what to fix:
+
+```markdown
+## Report Format
+
+For each file, organize findings by severity:
+
+### HIGH — Likely Hallucination or Fabrication
+- Claim: [the specific text]
+- Finding: [what verification found]
+- Action: Remove, correct, or add qualification
+
+### MEDIUM — Unverified or Unsourced
+- Claim: [the specific text]
+- Finding: [unable to verify / no source found]
+- Action: Add source, soften language, or mark as estimate
+
+### LOW — Inference Stated as Fact
+- Claim: [the specific text]
+- Action: Add qualifier ("typically", "in our experience")
+```
+
+## Step 5: Add Verification Standards
+
+This is the constraint layer — rules that prevent the skill from over-flagging or under-flagging:
+
+```markdown
+## Standards
+
+- A tool that does not exist is HIGH severity
+- A statistic without a source is MEDIUM severity
+- A URL that does not resolve is HIGH severity
+- A qualified claim ("typically", "often") is acceptable
+- Educational simplifications are acceptable unless misleading
+```
+
+<Callout type="tip">
+These standards encode the judgment that makes the skill useful rather than noisy. Without them, Claude would flag every superlative and every estimate — producing a report so long that no one reads it. The standards are constraints that shape the output toward actionable findings.
+</Callout>
+
+## Step 6: Add Parallel Subagent Architecture
+
+A single-agent fact-checker degrades on large content sets. Reading 20 files sequentially fills the context window, and verification quality drops for later files — the exact "context rot" problem covered in Module 4.
+
+The fix: instruct the skill to dispatch parallel subagents, one per file group.
+
+Add this to the top of your process section:
+
+```markdown
+## Process
+
+This skill uses parallel subagents for isolated fact-checking.
+
+1. Identify target files using Glob
+2. Group files by module or directory (3-5 files per group)
+3. Dispatch parallel subagents — one per group, using
+   the Task tool. Each subagent receives the file list,
+   classification system, and verification standards.
+4. Aggregate subagent reports into a consolidated finding.
+```
+
+This is the **Isolate** strategy from Module 4's context engineering lesson applied to a skill. Each subagent gets a clean context window, runs independent web searches, and returns a focused report. Five groups checked in parallel instead of 20 files checked serially.
+
+<Details title="Why parallel subagents matter for verification quality">
+The context rot problem is particularly acute for verification tasks. As files accumulate in a single context window, several things degrade:
+
+1. **Early file recall worsens.** Files read at the start of a large audit compete with everything read afterward. The "lost in the middle" problem means the first files in a long audit get worse verification than the last ones.
+
+2. **Web search results bleed across files.** When the agent searches to verify a claim in file 3, those results sit in context during verification of file 7. The noise accumulates.
+
+3. **Classification consistency drifts.** A claim rated MEDIUM early in the audit might be rated HIGH or ignored entirely later, because the system's working context has shifted.
+
+Parallel subagents solve all three problems. Each subagent starts with a clean context window, verifies its file group, and returns a focused report. The orchestrator aggregates clean results rather than trying to maintain consistency across a degrading single context. The quality difference between sequential and parallel fact-checking on large content sets is substantial — not marginal.
+</Details>
+
+## The Complete SKILL.md
+
+Assemble all sections into a single file. The skill body stays under the 500-line ceiling, with the classification system, verification process, standards, and subagent orchestration instructions all fitting comfortably.
+
+## Running the Skill
+
+Invoke it against your own content:
+
+```
+/fact-checker content/learn/building-skills/
+```
+
+Or audit everything:
+
+```
+/fact-checker content/
+```
+
+The skill groups the files, dispatches parallel subagents, each subagent classifies and verifies claims independently, then the main conversation aggregates the results into a consolidated report. Review the HIGH findings first.
+
+## What This Exercise Demonstrates
+
+This single skill applied six patterns from this course:
+
+1. **`disable-model-invocation`** — Explicit invocation for deliberate actions
+2. **`allowed-tools` restriction** — Read-only tools for a read-only task
+3. **Domain knowledge encoding** — The classification taxonomy and verification standards are the institutional knowledge Claude doesn't have natively
+4. **Structured output specification** — The severity-rated report format ensures consistent, scannable output
+5. **Constraint-based design** — The verification standards prevent over-flagging while catching real problems
+6. **Parallel subagent orchestration** — The Isolate context strategy from Module 4, applied to prevent context rot during large audits
+
+The fact-checker is also a meta-skill — it validates the output of your other skills. Run it against your RFP response templates to catch capability claims that drifted from reality. Run it against your battlecards to find competitive claims that are outdated. Run it against your discovery question banks to catch assumptions that no longer hold.
+
+A verification skill is the evaluation layer from Module 4 made concrete. You defined what "correct" looks like (the classification system). You established constraints (the verification standards). You specified measurable output (the severity report). That is intent engineering applied to a single, practical skill.
+
+## Try It
+
+Build the fact-checker skill in your own Claude Code environment. Then run it against something you've already built — a CLAUDE.md file, a skill you wrote, or a proposal template. The findings will show you where your content's factual foundation is strong and where it's relying on inference that hasn't been checked.
+
+The best time to catch a hallucination is before it reaches a prospect.
+
+<KnowledgeCheck
+  question="The fact-checker skill uses `allowed-tools: Read, Glob, Grep, WebSearch, WebFetch` without `Write` or `Edit`. Why is this restriction important for an auditing skill?"
+  options={[
+    "Write and Edit are too slow for auditing workflows — restricting them improves performance",
+    "A fact-checker that can modify files might accidentally 'fix' claims by removing them rather than flagging them for human review",
+    "WebSearch and Write cannot be used together in the same skill due to tool conflicts",
+    "Read-only tools use fewer tokens, making the skill more cost-efficient"
+  ]}
+  correct={1}
+  explanation="Restricting to read-only tools is a safety pattern: the skill cannot accidentally modify the content it's auditing. A fact-checker should report problems and surface them for human review — not autonomously edit or remove claims. If Write and Edit were available, an overly 'helpful' behavior could alter the original content rather than flagging it. The SE needs to make the correction decision; the skill's job is only to identify and classify problems."
+/>
+
+<KnowledgeCheck
+  question="You run the fact-checker against a 25-file content directory without parallel subagents. Verification quality is noticeably worse for files 18-25 than for files 1-5. What is the most likely cause?"
+  options={[
+    "WebSearch results become less accurate after many queries in a single session",
+    "Context rot — accumulated content, search results, and prior findings in a single context window degrade recall and classification consistency for later files",
+    "The skill's classification system is biased toward MEDIUM severity for longer content",
+    "Files later in alphabetical order tend to contain more inferences than earlier ones"
+  ]}
+  correct={1}
+  explanation="This is context rot in action. As files accumulate in a single context window, the 'lost in the middle' problem means earlier content gets displaced. Web search results from earlier files sit in context and add noise. Classification consistency drifts because the system's working context has shifted. Parallel subagents solve this: each subagent starts with a clean context window and verifies only its assigned file group, eliminating the quality gradient across large audits."
+/>
+
+<KeyTakeaways items={[
+  "Verification is a core capability, not optional polish — hallucinations in customer-facing output (RFP responses, proposals, battlecards) have real deal consequences.",
+  "The fact-checker skill demonstrates six design patterns simultaneously: explicit invocation, tool restriction, domain knowledge encoding, structured output, constraint-based standards, and parallel subagent orchestration.",
+  "The classification system (VERIFIABLE FACT / INFERENCE / OPINION AS FACT) with severity levels (HIGH / MEDIUM / LOW) is the institutional knowledge that makes verification actionable rather than a flood of undifferentiated flags.",
+  "Parallel subagents with isolated context windows are essential for verification quality at scale — sequential single-context audits degrade significantly on large content sets due to context rot.",
+  "A fact-checker is a meta-skill — running it against your other skills, templates, and battlecards closes the evaluation loop on the content your agent produces."
+]} />
+
+<SelfAssessment items={[
+  "I can write the complete frontmatter and classification system for a fact-checker skill, applying the correct design patterns for each element.",
+  "I can explain why restricting to read-only tools is a safety pattern for auditing skills, not just a performance optimization.",
+  "I can describe the parallel subagent architecture for large content audits and explain why it produces better verification quality than sequential single-context auditing.",
+  "I can identify all six design patterns from this module that appear in the fact-checker skill and explain how each one contributes to the skill's reliability."
+]} />

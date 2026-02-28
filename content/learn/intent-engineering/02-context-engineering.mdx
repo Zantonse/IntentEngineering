@@ -1,0 +1,154 @@
+---
+title: "Context Engineering for Claude"
+description: "The four strategies for managing Claude's context window — write, select, compress, and isolate — and how they apply to SE workflows."
+order: 2
+module: "intent-engineering"
+---
+
+## Why Context Engineering Matters
+
+> "Good context engineering means finding the smallest possible set of high-signal tokens that maximize the likelihood of some desired outcome." — Anthropic, September 2025
+
+The context window is not unlimited storage. It is a finite resource with diminishing returns — and as token count grows, accuracy degrades. As the amount of information in the context window grows, Claude's ability to accurately recall and use that information degrades — a phenomenon called context rot. More context is not automatically better.
+
+For SEs, the implication is practical. Your discovery skill might work well with three prospect notes in context. Add fifteen previous call transcripts, three product docs, and a competitive analysis, and performance drops — not because Claude is less capable, but because the signal-to-noise ratio degraded. The relevant information is still there. Claude just cannot reliably find it among everything else.
+
+<Callout type="key">
+Context engineering is the discipline of controlling what enters the context window, when, and in what form. It sits between your skills and your orchestration logic — the layer that determines what Claude actually sees when it runs.
+</Callout>
+
+## The Four Strategies
+
+A useful framework organizes context management into four strategies, each addressing a different aspect of how information enters and flows through the context window.
+
+### Write — Save Outside the Context Window
+
+Agents take notes and write to external storage during a task, so they can retrieve specific information later without keeping it in context the whole time.
+
+Claude Code uses this naturally: NOTES.md files, to-do lists, progress tracking files. When you run a long session with `/compact` in play, Claude writes architectural decisions to a file before compressing — preserving what matters without carrying every token forward.
+
+The SE application is direct. After a discovery call, your follow-up skill writes a structured summary to a file: prospect pain points, technical requirements, decision criteria, next steps. Future sessions reference that file rather than holding the full transcript in context. The information is durable. The context load is minimal.
+
+The rule: if you will need this information later but not right now, write it down and load it later. Do not hold it in context speculatively.
+
+### Select — Pull In Just-in-Time
+
+Maintain lightweight identifiers — file paths, queries, metadata — and load data at runtime via tools when it becomes relevant.
+
+This is already how skills work. Layer 1 metadata is always present: roughly 100 tokens per skill, enough for Claude to recognize when a skill applies. The full SKILL.md body and everything in `references/` only loads when triggered. A 5,000-word question library never enters the context window unless Claude specifically needs questions.
+
+Claude Code uses glob and grep to navigate codebases without pre-loading them. It reads files on demand rather than ingesting an entire repository upfront. The same principle applies to your workflows.
+
+Your capability-matcher skill should not pre-load your entire product documentation. It should use references to pull in only the capability docs relevant to the requirements being evaluated in this specific session. Anthropic calls this progressive disclosure — agents incrementally discover relevant context through exploration rather than front-loading everything that might possibly be relevant.
+
+The `!`command`` syntax extends Select to live data: a backtick-wrapped shell command prefixed with `!` in your `SKILL.md` body executes at the moment the skill runs and injects its output directly into context. This makes CRM records, calendar entries, and API responses first-class Select sources — the skill pulls fresh, account-specific data at execution time rather than relying on stale notes loaded manually.
+
+### Compress — Retain Only What's Needed
+
+When context approaches limits, summarize and reinitiate rather than letting the window overflow.
+
+Claude Code auto-compacts at 95% context window usage. The compaction preserves architectural decisions, key implementation details, and active task state. It discards redundant tool outputs, intermediate reasoning steps, and any content that was useful at the time but adds cost without value now. Once a tool result from fifty messages ago has been acted on, the raw output is dead weight.
+
+The SE application: during a long RFP response session spanning fifty or more requirements, Claude compresses earlier responses into a rolling summary while keeping the current section in full detail. The summary retains what was decided. The full text recedes. The overall session can continue without hitting limits.
+
+Compress is also a design decision, not just an automatic behavior. You can build explicit summarization steps into your workflows: after processing a discovery call, before beginning demo prep, distill the call output to a structured briefing. That briefing enters future steps rather than the full call transcript.
+
+### Isolate — Split Context Across Separate Windows
+
+Subagents handle focused tasks with their own fresh context windows, returning condensed summaries to the parent conversation.
+
+Each subagent operates independently. Its work does not bloat the parent conversation's context. It receives a specific input, completes a bounded task, and returns a 1,000-2,000 token summary — the output, not the full working history.
+
+Anthropic's multi-agent research system is the clearest example: an Opus orchestrator spawns Sonnet subagents, each exploring a topic in parallel with isolated context. The orchestrator never sees each subagent's full context; it only sees what each subagent reports back.
+
+For SEs: your RFP pipeline uses subagents. One parses requirements from the raw document. Another matches capabilities against those requirements. A third drafts responses for each section. Each operates with clean context focused on its specific task. The orchestrator stitches the outputs together. No single context window tries to hold the entire workload.
+
+<Callout type="tip">
+When deciding which strategy to use: Write for information you will need later but not now. Select for information that only matters in specific skill contexts. Compress when a session is getting long and you need to continue. Isolate when a task is independently bounded and its working context should not contaminate the parent session.
+</Callout>
+
+## The CLAUDE.md Hierarchy as Context Architecture
+
+Claude Code's memory system is itself an implementation of these four strategies. Each layer of the hierarchy uses a different approach:
+
+```
+Organization policy    → Write (managed, persistent)
+~/.claude/CLAUDE.md    → Select (always loaded, user-level)
+./CLAUDE.md            → Select (always loaded, project-level)
+.claude/rules/*.md     → Select (path-scoped, conditional)
+Auto memory            → Write + Select (Claude's own notes)
+Skills metadata        → Select (lazy-loaded on trigger)
+Session history        → Compress (auto-compact at 95%)
+Subagents              → Isolate (fresh context per task)
+```
+
+Organization policy is written once and persists. Your CLAUDE.md files are always-on context — they load at session start and stay loaded. Scoped rules in `.claude/rules/` only load when Claude is working in matching file paths. Skills use lazy loading. Long sessions compress automatically. Complex tasks spawn subagents.
+
+The hierarchy itself is context engineering. The architecture of the memory system is the architecture of which information arrives when — not as an afterthought, but as a design principle baked into how Claude Code works.
+
+## Context Rot — The Performance Tax
+
+More context is not automatically better. Every major LLM shows degraded performance as input length increases. There are several mechanisms at work.
+
+The "lost in the middle" problem is the most documented: information placed in the middle of the context window is recalled worst. Information at the beginning benefits from primacy; information at the end benefits from recency. The middle competes against everything and loses.
+
+Distractors compound the degradation. Topically related but incorrect information — the kind you might inadvertently include when you load a full document instead of an excerpt — does not just add noise. It actively pulls Claude toward wrong answers. The model finds plausible patterns in the wrong material and uses them.
+
+<Callout type="warning">
+Claude specifically tends to abstain rather than hallucinate when context quality degrades. This means over-stuffing context can cause your system to produce nothing rather than something wrong. A skill that stops responding mid-session because context got too noisy looks like Claude being unhelpful — and the root cause is hard to trace without understanding context rot.
+</Callout>
+
+Practical guidelines: place critical information early in context and repeat key constraints late. Avoid loading entire documents when excerpts cover what you need. When you find a skill underperforming on longer sessions, inspect the context, not the prompt.
+
+## Applying This to Your SE System
+
+Look at your existing skills and orchestration workflows through the context engineering lens.
+
+Are your SKILL.md files lean enough? The target is 1,500-2,000 words — comprehensive but bounded. Everything else belongs in `references/`, loaded on demand. A SKILL.md that runs to 5,000 words is not thorough; it is a context problem waiting to happen.
+
+Are your orchestration steps using subagents where isolation would help? If you have a workflow where three independent analyses run in sequence, each building context that the next step has to filter through, you have a parallel fan-out candidate with isolated context per branch.
+
+Is your CLAUDE.md loading information that should be in a skill instead? CLAUDE.md is always-on — it loads at session start regardless of what you're doing. Information specific to one workflow type does not belong there. It belongs in the skill that uses it, loading only when that skill triggers.
+
+Are you writing structured notes in long workflows, or relying on Claude to remember everything in-context? Any session that spans an hour or more of work should have explicit write steps — structured outputs at natural breakpoints that can be reloaded if the session continues in a new window.
+
+The next lesson covers the architectural layers above context: goals, constraints, and memory systems that encode what your system is trying to achieve at the level above any individual session.
+
+<KnowledgeCheck
+  question="A SKILL.md file has grown to 5,000 words with extensive product documentation embedded directly in it. Which context engineering strategy should you apply, and why?"
+  options={[
+    "Compress — auto-compact the session when the skill loads",
+    "Isolate — spawn a subagent to handle the skill separately",
+    "Select — move the product documentation to references/ and load it on demand",
+    "Write — save the skill output to a file before it enters context"
+  ]}
+  correct={2}
+  explanation="A bloated SKILL.md is a Select problem. Static product documentation belongs in references/ directories that load on demand when a workflow needs them — not embedded in the skill file that loads every time the skill triggers. The target SKILL.md size is 1,500-2,000 words. Everything else belongs in references/."
+/>
+
+<KnowledgeCheck
+  question="Your RFP analysis pipeline runs three sequential analyses, each building context that the next step must filter through. What is the recommended fix?"
+  options={[
+    "Use the Write strategy to save intermediate results between steps",
+    "Use the Compress strategy to auto-compact between each analysis step",
+    "Use the Isolate strategy — dispatch parallel subagents with fresh context per analysis branch",
+    "Reduce the amount of documentation provided to each analysis step"
+  ]}
+  correct={2}
+  explanation="Sequential analyses where each step's context bleeds into the next is a parallel fan-out candidate with isolated context per branch. The Isolate strategy gives each analysis its own fresh context window. Each subagent completes its bounded task and returns a condensed summary to the orchestrator — the verbose working history stays isolated and never contaminates downstream steps."
+/>
+
+<KeyTakeaways items={[
+  "The context window is a finite resource with diminishing returns — more context is not automatically better.",
+  "The four strategies are Write (save outside context), Select (pull just-in-time), Compress (summarize when approaching limits), and Isolate (subagents with fresh context per task).",
+  "Context rot is the performance degradation that happens as context grows — Claude tends to abstain rather than hallucinate, making the failure mode invisible.",
+  "The CLAUDE.md hierarchy is itself an implementation of these four strategies — each layer uses a different approach to control what enters context and when.",
+  "When a skill underperforms on longer sessions, inspect the context first, not the prompt."
+]} />
+
+<SelfAssessment items={[
+  "I can identify which of the four context engineering strategies (Write, Select, Compress, Isolate) applies to a given workflow problem.",
+  "I can explain why a SKILL.md that runs to 5,000 words is a context problem, not a thoroughness feature.",
+  "I understand what context rot is and why Claude's failure mode (abstaining rather than hallucinating) makes it hard to diagnose.",
+  "I can describe how the CLAUDE.md hierarchy implements context engineering principles across its different layers."
+]} />

@@ -1,0 +1,134 @@
+---
+title: "The Intent Engineering Stack"
+description: "Understanding the progression from prompt engineering to context engineering to intent engineering — and why the distinction matters."
+order: 1
+module: "intent-engineering"
+---
+
+## From Prompts to Systems
+
+You have built skills. You have composed them into workflows. Your discovery skill fires at the right moment and generates good questions. Your RFP pipeline produces draft responses that hold up under review. By any reasonable measure of the previous three modules, things are working.
+
+But something is still missing.
+
+Your discovery skill does not know that the prospect already had a demo last week — and without that context, it asks questions that make you look unprepared. Your RFP pipeline produces responses, but they do not reflect the competitive positioning your team agreed on yesterday. The skills execute correctly. The outputs are technically fine. But the system is not actually aligned with what you want it to do.
+
+The missing piece is not better prompts. It is not more skills. It is system design — making sure the right context, constraints, and goals are present at every decision point, not just at the step you happened to be thinking about when you wrote the skill.
+
+That is what this module is about.
+
+## The Three Levels
+
+Most practitioners start with prompts. Some graduate to thinking about context. Fewer still get to the level of asking what the system is actually accountable for. These are not just different techniques — they represent meaningfully different ways of thinking about the problem.
+
+**Prompt Engineering**: Crafting individual messages to get better outputs. Adding context, specifying format, asking for step-by-step reasoning. This is where everyone starts, and it is genuinely useful. But it is ephemeral — each conversation starts fresh, and the knowledge you embedded in a well-crafted prompt is gone the moment the session ends.
+
+**Context Engineering**: Curating the right information at the right time. Andrej Karpathy and Tobi Lütke popularized the term in June 2025; Anthropic formalized it in September 2025 to describe the shift from "what words should I write?" to "what tokens should be in the context window for this step?" This is a more useful frame because it treats the context window as a resource to manage, not just a place to put your instructions.
+
+> "Context engineering is the delicate art and science of filling the context window with just the right information for the next step."
+>
+> — Andrej Karpathy
+
+The CLAUDE.md files, skills, and progressive disclosure model you have been building are all context engineering primitives. You are not just writing instructions — you are deciding what information gets loaded, when, and at what level of detail.
+
+**Intent Engineering**: Designing systems around goals, constraints, and measurable outcomes. This is the next shift — not "what information is relevant for this step?" but "what must this agent accomplish, within what boundaries, and how do we know it worked?" Intent engineering is what makes your SE agent deployable — not just capable, but accountable to the outcomes that actually matter.
+
+<Callout type="key">
+Context engineering makes your agent effective step by step. Intent engineering makes it accountable to something larger.
+</Callout>
+
+## What Makes Intent Engineering Different
+
+The distinction becomes concrete when you look at what each level actually touches:
+
+| Dimension | Prompt Engineering | Context Engineering | Intent Engineering |
+|---|---|---|---|
+| Primary Focus | Wording and phrasing | Information relevance | Objectives and outcomes |
+| Core Question | What should I say? | What information is relevant? | What must be accomplished? |
+| Scope | Single interaction | Session or workflow | Full system |
+| Claude Code Expression | System prompt text | CLAUDE.md, skills, tools | Goals + constraints + memory + evaluation |
+
+The boundaries between these levels are not sharp. A well-written skill does context engineering. A system with defined constraints starts to do intent engineering. But the levels point at genuinely different concerns, and conflating them is how you end up with systems that work locally but fail at the level you actually care about.
+
+<Callout type="warning">
+Conflating the three levels is how you end up with systems that work locally but fail at the level you actually care about. A system that passes all your prompt-level tests can still fail at the goal level if intent was never encoded.
+</Callout>
+
+## An Emerging Discipline
+
+It is worth being honest about where this term stands: intent engineering is not yet a standardized discipline. Multiple practitioners arrived at it independently in 2025 and 2026, working from similar observations about the limitations of prompt and context engineering alone.
+
+Anthropic does not use the term officially. But their entire Claude Code architecture — skills, memory hierarchy, subagents, hooks, MCP integrations — is a practical implementation of intent engineering principles. The architecture is designed to encode what the system should do, under what constraints, with access to what resources. The term is new; the underlying design principles are not.
+
+The most instructive failure case comes from Klarna's 2024 deployment of AI customer support. Their system resolved support tickets correctly by any prompt-level metric — answers were accurate, responses were complete. But the system optimized for immediate resolution at the cost of long-term customer relationships. Klarna later began re-hiring human agents, suggesting the efficiency gains came with tradeoffs the original metrics did not capture. The prompt was good. The context was adequate. The intent was never specified. The system had no encoded understanding that "resolved" meant something different from "satisfied."
+
+<Callout type="example">
+The Klarna case illustrates an intent-level failure: the system optimized for a metric (ticket resolution) without encoding the goal it was actually supposed to serve (customer satisfaction and retention). Better prompts would not have caught it. Only explicit goal design would have.
+</Callout>
+
+That is an intent-level failure. Better prompts would not have caught it. A richer context window would not have caught it. Only a system designed with explicit goals — including goals about what resolution actually means — would have caught it.
+
+## What You Already Know
+
+Here is something useful: you have already been doing intent engineering in this course. You just have not been calling it that.
+
+When you wrote trigger descriptions that specify exactly when a skill should activate — you were declaring activation intent. You were encoding a judgment about when this workflow is the right one to run, and when it is not.
+
+When you organized skills with `references/` and `scripts/` directories and wrote SKILL.md files that reference them selectively — you were doing progressive context disclosure. You were making deliberate decisions about what gets loaded immediately versus what gets pulled in only when needed.
+
+When you built orchestration workflows that pass state between steps and handle edge cases — you were composing intent across multiple steps. Each routing decision encodes a judgment about which path serves the goal.
+
+When you tested skills against boundary cases and iterated based on what failed — you were doing evaluation. You were checking whether the system's actual behavior matched the behavior you intended.
+
+The vocabulary is new. The work is not.
+
+## What This Module Covers
+
+This module takes the components you have built and asks a harder question: do they add up to a system that actually works?
+
+**Lesson 2: Context Engineering Deep Dive** — The four strategies that keep your system's context window effective as complexity grows. Most context problems have the same root causes, and there are systematic approaches for each one.
+
+**Lesson 3: Memory, Goals, and Constraints** — The architectural layers that encode what your system wants. Not just what skills to run, but what the system is accountable for — what it should optimize, what it should never do, and what counts as success.
+
+**Lesson 4: Evaluation and Complete System Design** — How to know your system actually works. Evaluation is not optional polish. It is how you distinguish a system that performs in controlled conditions from one that performs under real conditions.
+
+The skills you have built are the building blocks of your SE agent. Now we design the architecture that makes it production-ready.
+
+<KnowledgeCheck
+  question="What is the key difference between context engineering and intent engineering?"
+  options={[
+    "Context engineering uses CLAUDE.md files while intent engineering uses skills",
+    "Context engineering asks 'what information is relevant?' while intent engineering asks 'what must be accomplished?'",
+    "Intent engineering is only for large enterprise systems; context engineering works for individual workflows",
+    "Context engineering is a newer discipline that supersedes intent engineering"
+  ]}
+  correct={1}
+  explanation="Context engineering focuses on managing what information enters the context window at each step. Intent engineering goes one level higher — it encodes the goals, constraints, and success criteria the system must satisfy. Both are needed: context engineering makes your agent effective step by step, while intent engineering makes it accountable to something larger."
+/>
+
+<KnowledgeCheck
+  question="The Klarna customer support failure is best described as which type of failure?"
+  options={[
+    "A prompt engineering failure — the prompts were too vague",
+    "A context engineering failure — the context window lacked sufficient data",
+    "An intent-level failure — the system optimized for a metric without encoding the actual goal",
+    "A model capability failure — the AI was not capable enough for the task"
+  ]}
+  correct={2}
+  explanation="Klarna's system resolved tickets accurately (good context, good prompts) but optimized for immediate resolution at the cost of long-term customer relationships. The system had no encoded understanding that 'resolved' meant something different from 'satisfied.' This is a failure of intent design — the goals were never specified at the system level."
+/>
+
+<KeyTakeaways items={[
+  "The three levels — prompt engineering, context engineering, and intent engineering — represent meaningfully different concerns, not just levels of sophistication.",
+  "Intent engineering is what makes an agent accountable to outcomes, not just technically capable of producing output.",
+  "The Klarna case shows that systems can pass all prompt-level and context-level tests and still fail at the goal level when intent was never encoded.",
+  "You have already been doing intent engineering by writing trigger descriptions, organizing skill directories, and testing against boundary cases — the vocabulary is new, the work is not.",
+  "Claude Code's entire architecture — skills, memory hierarchy, subagents, hooks — is a practical implementation of intent engineering principles."
+]} />
+
+<SelfAssessment items={[
+  "I can explain the difference between prompt engineering, context engineering, and intent engineering.",
+  "I can identify which layer (prompt, context, or intent) a given system failure belongs to.",
+  "I can recognize when a system that is technically functioning is failing at the intent level.",
+  "I can describe how the work I have already done in this course relates to intent engineering principles."
+]} />

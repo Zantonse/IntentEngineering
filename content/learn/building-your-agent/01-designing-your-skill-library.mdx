@@ -1,0 +1,237 @@
+---
+title: "Designing Your Skill Library"
+description: "The complete taxonomy of SE skills — what to build first, how to organize them, and the design patterns that make skills genuinely useful."
+order: 1
+module: "building-your-agent"
+---
+
+## Before You Begin
+
+This module assumes you have Claude Code installed and working. If you don't yet:
+
+1. Install Claude Code: `curl -fsSL https://claude.ai/install.sh | bash`
+2. Run `claude` in your terminal and complete the authentication setup
+3. Verify skills are discoverable: create a test directory at `~/.claude/skills/test-skill/` with a minimal `SKILL.md`
+
+On Windows, use `irm https://claude.ai/install.ps1 | iex` or `winget install Anthropic.ClaudeCode`. See [code.claude.com](https://code.claude.com) for all options.
+
+Claude Code's documentation at [code.claude.com](https://code.claude.com) covers setup in detail. The rest of this module assumes you can run `claude` and invoke skills.
+
+## Start With the Skill Map
+
+The mistake most SEs make when building their first skill library is trying to build everything at once. You end up with a dozen half-finished skills, none of them good enough to rely on, and the whole project stalls. The better approach is a deliberate build order — starting with the skills that pay back immediately, then expanding as your workflow matures.
+
+The four-tier taxonomy below is organized by when you should build each tier, not by how important each skill ultimately is.
+
+**Tier 1 — Core Deal Execution.** These are daily-use skills. They fire multiple times a week, they follow consistent processes, and they have the highest ratio of time saved to build effort. Build these first: `discovery-prep`, `demo-builder`, `rfp-analyzer`, `poc-manager`, `objection-handler`.
+
+**Tier 2 — Technical Content.** These skills run less frequently but have high per-use value. They require more reference material to build well. Build these after your Tier 1 skills are stable: `solution-architect`, `security-questionnaire`, `battlecard-builder`, `technical-proposal`.
+
+**Tier 3 — Deal Intelligence.** These skills synthesize information across a deal's history and are most useful when you have episodic memory in place — call notes, account history, stage progression. Build these third: `account-brief`, `deal-strategy`, `win-loss-analysis`, `customer-handoff`.
+
+**Tier 4 — Content and Thought Leadership.** These skills produce durable artifacts rather than deal-specific outputs. Build them last, because they depend on a well-functioning Tier 1-3 library for their raw material: `technical-blog`, `use-case-library`.
+
+<Callout type="tip">
+Start with Tier 1 and ship your first two or three skills before moving up. A library of five well-built Tier 1 skills will change how you work more than twenty mediocre skills spread across all tiers.
+</Callout>
+
+## The Design Patterns That Matter
+
+Individual skills can be technically correct but practically useless. The difference between a skill you reach for every day and one you abandon after two weeks comes down to design. Five patterns separate durable skills from ones that fail under real conditions.
+
+### 1. Separate Static from Dynamic Context
+
+Product documentation, competitive comparisons, and pricing guidance do not change every time you use a skill. They belong in `references/` — static files that load on demand when the skill needs them. Account-specific data — CRM records, recent call notes, open opportunities — is different. It changes constantly and cannot live in a file.
+
+The pattern for live data is the `!``command`` injection syntax. Commands in backtick notation execute before Claude sees the skill. The output replaces the command inline. Claude receives rendered data, not a reference to data.
+
+Here is what a `SKILL.md` looks like with dynamic CRM injection:
+
+```yaml
+---
+name: discovery-prep
+description: This skill should be used when the user asks to "prepare discovery
+  questions", "prep for a discovery call", or "plan a technical discovery
+  call with [prospect name]".
+disable-model-invocation: true
+---
+
+## Account Context
+### CRM Data
+!`python scripts/crm_fetch.py $ARGUMENTS`
+
+### Open Opportunities
+!`sf data query --query "SELECT Name, StageName, Amount, CloseDate FROM Opportunity WHERE Account.Name LIKE '%$ARGUMENTS%' ORDER BY CloseDate ASC LIMIT 5" --json | jq -r '.result.records[] | "\(.Name): \(.StageName) — $\(.Amount) — closes \(.CloseDate)"'`
+```
+
+When you invoke this skill with `discovery-prep Acme Corp`, the CRM fetch runs against the live Salesforce record and the rendered output enters Claude's context. The product knowledge in `references/` is static. The account data is always current.
+
+### 2. Stakeholder-Aware Output
+
+A discovery prep document for a CTO should not look like one for an IT director or a procurement manager. CTOs need business outcomes and ROI framing. Engineers want API examples and architecture diagrams. Procurement wants TCO comparisons and contract flexibility terms. A skill that produces one generic output gets used once and abandoned.
+
+The fix is a stakeholder guidance block in your SKILL.md:
+
+```
+## Stakeholder Calibration
+If the primary contact is a technical buyer (engineering lead, architect, CTO):
+  - Lead with architecture and integration depth
+  - Include API examples where relevant
+  - Quantify performance and scalability claims
+
+If the primary contact is a business buyer (VP Sales, CFO, COO):
+  - Lead with business outcomes and ROI framing
+  - Reference comparable customer results
+  - Avoid deep technical specifics unless explicitly requested
+
+If the primary contact is procurement or legal:
+  - Lead with TCO, contract structure, and risk terms
+  - Reference compliance certifications proactively
+  - Flag any areas requiring legal review
+```
+
+This block guides Claude to calibrate output to the audience without requiring you to specify audience type in every invocation. Providing the prospect contact in the argument is enough.
+
+### 3. Calibrated Confidence
+
+One of the fastest ways to lose credibility with a prospect is to claim a capability your product does not have. But blanket conservatism — refusing to answer until you have checked with engineering — is equally damaging. The right design encodes an honest capability classification scheme in your skill's product knowledge.
+
+Use four levels consistently:
+
+```
+FULL — Capability exists, is generally available, and is production-ready.
+  "We support SAML 2.0 and OIDC authentication natively."
+
+PARTIAL — Capability exists but with limitations worth disclosing.
+  "We support SSO, but custom attribute mapping requires Professional tier."
+
+PLANNED — On the roadmap with a committed timeline.
+  "SCIM provisioning is in private beta, targeting GA in Q3."
+
+GAP — Not available. Do not obscure this.
+  "We do not currently support on-premises deployment."
+```
+
+<Callout type="warning">
+Never classify PLANNED as FULL. The prospect will discover the distinction at implementation time, not before — and you will own that discovery. Build this classification rubric into your references/product-capabilities.md and your skill instructions will enforce it automatically.
+</Callout>
+
+### 4. Disable Auto-Invocation for Customer-Facing Output
+
+Skills fall into two categories: ones that produce background knowledge Claude uses internally, and ones that produce output that lands in front of a customer. These two categories should behave differently.
+
+Background knowledge skills — like a competitive battlecard that Claude references while drafting a proposal — can auto-invoke. They run silently when triggered and feed into a downstream workflow. Auto-invocation is appropriate.
+
+Customer-facing output skills — RFP responses, technical proposals, follow-up emails, POC evaluation reports — should never auto-invoke. Set `disable-model-invocation: true` in the frontmatter and require explicit invocation by name. The flag prevents the skill from firing on description-matching alone. You run it when you are ready to run it.
+
+```yaml
+---
+name: rfp-analyzer
+description: This skill should be used when the user asks to "respond to an RFP",
+  "draft RFP responses", or "fill out a request for proposal".
+disable-model-invocation: true
+---
+```
+
+The extra second of explicit invocation is not friction — it is the intentional checkpoint before something reaches a customer.
+
+### 5. Fork Context for Research Skills
+
+Skills that do deep research — competitive analysis, account intelligence gathering, market research — can expand context aggressively. If that expansion happens inside your main session, everything downstream inherits the noise.
+
+The solution is `context: fork` with `agent: Explore`. This spins up a subagent with its own fresh context window. The subagent does the research, returns a condensed summary, and the verbose exploration log never enters your main context.
+
+```yaml
+---
+name: competitive-analysis
+description: This skill should be used when the user asks for "competitive research",
+  a "battlecard", or "how we compare to [competitor]".
+context: fork
+agent: Explore
+---
+```
+
+Use this pattern for any skill where the research process is significantly longer than the output. The main session stays clean. The output is still complete.
+
+## Organizing Your Library
+
+Skill organization matters more as your library grows. A flat directory of twenty skills becomes hard to maintain. The recommended structure separates personal skills from shared knowledge:
+
+```
+~/.claude/skills/          # Personal skills, available across all projects
+  discovery-prep/
+    SKILL.md
+    references/
+    scripts/
+    assets/
+  demo-builder/
+  rfp-analyzer/
+  poc-manager/
+  objection-handler/
+  ...
+
+~/.claude/rules/           # Shared knowledge, available to ALL skills automatically
+  product-capabilities.md
+  pricing.md
+  competitor-positioning.md
+  competitive/
+    vs-competitor-a.md
+    vs-competitor-b.md
+```
+
+<Callout type="key">
+The `rules/` directory is the part most SEs underuse. Files in `rules/` load automatically for every skill — you do not need to reference them explicitly. This means product capability updates, pricing changes, and competitive repositioning need to happen in exactly one place. Every skill that touches those topics picks up the change on the next invocation.
+</Callout>
+
+The alternative — embedding product knowledge in each individual skill file — means updating a dozen files every time something changes. That is a maintenance problem that compounds. Put shared knowledge in `rules/` and update once.
+
+## Your First Three Skills
+
+You will build more eventually. Here are the three to build first and why each one earns the early investment.
+
+**Discovery Prep.** This is the highest-frequency skill in an SE's library. Most SEs run two to five discovery calls per week. Even a modest improvement in preparation quality — better questions, more targeted use case mapping, fewer generic follow-ups — compounds rapidly across those calls. Build this first.
+
+**RFP Analyzer.** The time savings are the most dramatic here. A typical RFP response without a skill takes four to eight hours. A well-built skill with a solid references library cuts that to ninety minutes, mostly review time. The ROI calculation is easy to justify, which makes this skill easy to commit to building properly.
+
+**Battlecard Builder.** Competitive intelligence affects every deal but usually lives in a Notion doc that is six months out of date. A battlecard skill that pulls from a well-maintained `competitive/` directory in `rules/` solves the freshness problem and produces output calibrated to the specific competitor and deal context. The competitive impact is high because good battlecards change how SEs handle objections, not just what they say.
+
+In the next lesson, we connect these skills to real data — CRM records, call transcripts, calendar context, and email threads. Static skills work with files on disk. The skills you actually reach for every day know what is happening in your accounts right now.
+
+<KnowledgeCheck
+  question="You have built 15 skills covering all four tiers. Product pricing changes quarterly and affects how your RFP Analyzer, Proposal Writer, and Objection Handler frame responses. Where should the pricing information live?"
+  options={[
+    "Embedded in each skill's SKILL.md file so each skill has its own complete copy",
+    "In a references/ file inside each skill's directory, loaded on demand",
+    "In ~/.claude/rules/pricing.md, loaded automatically by all skills",
+    "In ~/.claude/CLAUDE.md so it is always present in every session"
+  ]}
+  correct={2}
+  explanation="Shared knowledge that multiple skills need belongs in ~/.claude/rules/. Files in rules/ load automatically for every skill without explicit references. When pricing changes, you update one file and every skill picks up the change on the next invocation. Embedding the same information in multiple skill files creates a maintenance problem that compounds with every update."
+/>
+
+<KnowledgeCheck
+  question="Which design pattern should you apply to a competitive-analysis skill that browses competitor documentation, pricing pages, and review sites before producing a battlecard?"
+  options={[
+    "disable-model-invocation: true — require explicit invocation before it runs",
+    "Stakeholder-aware output — calibrate the battlecard to the audience type",
+    "context: fork with agent: Explore — isolate the research in a subagent with its own context window",
+    "Static references — pre-load all competitor documentation into the references/ directory"
+  ]}
+  correct={2}
+  explanation="Research skills that browse many sources aggressively expand context. The context: fork pattern with agent: Explore spins up a subagent with its own fresh context window. The subagent does the research and returns a condensed summary — the verbose research log never enters your main session context. This keeps your main session clean while still producing a thorough battlecard."
+/>
+
+<KeyTakeaways items={[
+  "Build skills in tier order — start with Tier 1 (Core Deal Execution) and ship your first two or three before moving up the taxonomy.",
+  "The five design patterns that separate durable skills from abandoned ones are: separate static from dynamic context, stakeholder-aware output, calibrated confidence levels, disable auto-invocation for customer-facing output, and fork context for research skills.",
+  "Product knowledge shared across multiple skills belongs in ~/.claude/rules/ — files there load automatically for every skill, so updates propagate without touching each individual skill.",
+  "The FULL / PARTIAL / PLANNED / GAP capability classification prevents both overcommitting (claiming PLANNED as FULL) and excessive conservatism (refusing to answer).",
+  "The intentional checkpoint provided by disable-model-invocation: true on customer-facing skills is not friction — it is the last gate before something reaches a prospect."
+]} />
+
+<SelfAssessment items={[
+  "I can identify which tier a given SE skill belongs to and explain the right order to build them.",
+  "I can apply all five design patterns (static/dynamic separation, stakeholder calibration, confidence levels, disable auto-invocation, context forking) when writing a SKILL.md.",
+  "I know the difference between what belongs in references/ versus ~/.claude/rules/ and why the distinction matters for maintenance.",
+  "I can write a capability entry using the FULL / PARTIAL / PLANNED / GAP framework without overcommitting or being unnecessarily conservative."
+]} />

@@ -1,0 +1,236 @@
+---
+title: "Account Context Systems"
+description: "Per-account memory files, the CLAUDE.md hierarchy as deal intelligence, and making your agent remember what matters across every interaction."
+order: 3
+module: "building-your-agent"
+---
+
+## The Memory That Makes Your Agent Yours
+
+A skill library makes Claude capable. Account context makes it yours.
+
+The difference between "generate discovery questions" and "generate discovery questions for Acme Corp, who are in healthcare, evaluating us against Competitor A, with a CTO who cares about API quality" is not capability. It is context. Both calls use the same skill. The second one produces output that is actually useful tomorrow morning.
+
+<Callout type="key">
+Capability without context produces polished generics. Context is what converts a capable agent into a deal-specific partner. It is also the most durable competitive investment you can make: your account context accumulates with every deal you work and is not something a competitor can replicate overnight.
+</Callout>
+
+The single highest-leverage investment you can make in your agent stack is per-account context files.
+
+## The Account Context File
+
+Every account worth your time deserves a structured context file. The format below is a recommended starting point — adapt the fields to match how your team qualifies deals, but resist the urge to simplify it too early. Sparse context produces sparse output.
+
+```yaml
+account:
+  name: "Acme Corp"
+  industry: "Financial Services"
+  employee_count: 4200
+  crm_id: "SF-0012345"
+
+deal:
+  stage: "Technical Evaluation"
+  target_close: "2026-04-30"
+  arr_target: 280000
+  primary_use_case: "Real-time fraud detection pipeline"
+  competing_with: ["Vendor X", "Build-in-house"]
+
+stakeholders:
+  - name: "Jordan Lee"
+    title: "VP of Engineering"
+    role: "Economic Buyer"
+    stance: "Cautiously positive"
+    communication_style: "Data-driven, responds to benchmarks"
+
+tech_stack:
+  languages: ["Python", "Go"]
+  data_infra: ["Kafka", "Snowflake"]
+  cloud: "AWS"
+
+history:
+  - date: "2026-01-15"
+    type: "discovery_call"
+    summary: "Confirmed fraud detection use case. Budget timing concern."
+
+open_items:
+  - "Send FSI reference customer intro"
+  - "Draft POC success criteria document"
+```
+
+Every field here is doing work. `competing_with` tells your agent which battle cards to load without you asking. `communication_style` tells it how to frame a follow-up email to Jordan Lee specifically — data and benchmarks, not narrative and vision. `tech_stack` means that when you ask for a POC architecture diagram, the agent defaults to Python and Kafka without you specifying.
+
+<Callout type="tip">
+The `history` array is especially valuable over the life of a long deal. A six-month technical evaluation with eight call notes, three POC cycles, and two rounds of security review accumulates real signal. If you have captured it, your agent can surface the right context before every meeting without you manually digging through CRM notes.
+</Callout>
+
+## The CLAUDE.md Hierarchy
+
+Account context files slot into the CLAUDE.md hierarchy that governs how your agent loads information for any given session. Understanding the three levels helps you decide what lives where.
+
+```
+~/.claude/CLAUDE.md                    # Personal SE context (territory, product)
+./CLAUDE.md                            # Account-level context (deal, stakeholders)
+.claude/rules/product-capabilities.md  # Shared product knowledge
+```
+
+**Personal level** (`~/.claude/CLAUDE.md`) is where your persistent professional identity lives. Your territory, your methodology preferences, your communication defaults, the product areas you cover, your manager's escalation criteria. This loads into every session regardless of which account you are working.
+
+**Account level** (`./CLAUDE.md`) is where deal-specific context lives. When you are working in an account directory, this file loads automatically and gives your agent the deal stage, stakeholders, tech stack, and interaction history relevant to that account. It overrides and extends the personal level without replacing it.
+
+**Shared rules** (`.claude/rules/`) are team-managed files that carry product knowledge, messaging guidelines, and competitive positioning that any SE on the team should have access to. Your personal CLAUDE.md can reference these files with an `@import` directive rather than duplicating content.
+
+The hierarchy is load order, not replacement. All three levels are active simultaneously. The more specific level takes precedence when there is a conflict, which means your account-level context can override a personal default without touching the shared rules your team maintains.
+
+## Scaling Across Accounts
+
+A senior SE covers 30 to 80 active accounts. You cannot manually curate 80 context files and keep them current. The system has to do most of the work.
+
+Three patterns that make this tractable:
+
+**Lazy initialization.** Create context files automatically when a deal enters Technical Evaluation — the stage where context starts to matter for your agent. Pull the CRM fields you need (account name, industry, employee count, deal stage, stakeholder list) and populate a template. The file is incomplete at creation, but it is better than nothing and gives your agent a baseline for the first call.
+
+**Incremental enrichment.** After each call prep session or post-call debrief, your agent proposes additions to the context file: new stakeholder observations, tech stack details surfaced in the call, updated open items. You review a diff and confirm or edit. The cost of maintaining a current context file drops from 20 minutes of manual CRM updates to 90 seconds of reviewing agent proposals.
+
+**Staleness detection.** A 60-day-old tech stack note is probably still accurate. A 60-day-old stakeholder stance is not. Add metadata to your context file that tracks when fields were last updated and flags them for review:
+
+```yaml
+memory_metadata:
+  last_updated: "2026-02-18"
+  confidence_score: 0.82
+  stale_after: "2026-03-18"
+```
+
+When `confidence_score` drops below 0.6, your agent adjusts its tone accordingly: "Based on limited context for this account, verify these assumptions before the call." That hedging is not a failure — it is the system correctly signaling that it needs fresh input rather than confidently producing stale output.
+
+<Details title="Building a lazy initialization script for account context files">
+A lazy initialization script creates a baseline context file when a deal reaches a qualifying stage. The script queries your CRM, populates a YAML template, and saves it to the account directory. Here is what that looks like in practice:
+
+```python
+# lazy_init_context.py
+# Triggered when a deal enters Technical Evaluation stage
+
+import json, subprocess, sys
+from pathlib import Path
+
+def fetch_opportunity(account_name):
+    result = subprocess.run([
+        "sf", "data", "query",
+        "--query", f"""
+            SELECT Account.Name, Account.Industry, Account.NumberOfEmployees,
+                   StageName, Amount, CloseDate,
+                   (SELECT Name, Title, Email FROM Contacts LIMIT 5)
+            FROM Opportunity
+            WHERE Account.Name LIKE '%{account_name}%'
+            ORDER BY LastModifiedDate DESC LIMIT 1
+        """,
+        "--json"
+    ], capture_output=True, text=True)
+    return json.loads(result.stdout)["result"]["records"][0]
+
+def create_context_file(account_dir, opp):
+    template = f"""account:
+  name: "{opp['Account']['Name']}"
+  industry: "{opp['Account']['Industry'] or 'Unknown'}"
+  employee_count: {opp['Account']['NumberOfEmployees'] or 0}
+
+deal:
+  stage: "{opp['StageName']}"
+  target_close: "{opp['CloseDate']}"
+  arr_target: {opp['Amount'] or 0}
+  primary_use_case: ""
+  competing_with: []
+
+stakeholders: []
+
+tech_stack:
+  languages: []
+  data_infra: []
+  cloud: ""
+
+history: []
+
+open_items: []
+
+memory_metadata:
+  last_updated: "2026-02-18"
+  confidence_score: 0.4
+  stale_after: "2026-04-18"
+"""
+    context_path = Path(account_dir) / "CLAUDE.md"
+    context_path.write_text(template)
+    print(f"Initialized context file: {context_path}")
+
+if __name__ == "__main__":
+    account_name = sys.argv[1]
+    account_dir = sys.argv[2]
+    opp = fetch_opportunity(account_name)
+    create_context_file(account_dir, opp)
+```
+
+The initial `confidence_score` of 0.4 reflects that this is a CRM-populated skeleton — not yet enriched with call observations or tech stack details. As you enrich it through calls and debrief sessions, the score rises. When it drops below 0.6 (due to the stale_after date passing without an update), your agent starts hedging its outputs appropriately.
+</Details>
+
+## What Your Agent Remembers
+
+Account context maps cleanly to the three memory types from the intent engineering module.
+
+**Procedural memory** is how your agent knows how to behave. This lives in your skills and your CLAUDE.md rules. It answers the question "how do I do discovery?" not "what do I know about this deal?"
+
+**Semantic memory** is factual knowledge about your domain. Product capabilities, competitive differentiators, customer references, industry-specific compliance requirements. This lives in your `references/` directories and in shared team knowledge files. It answers the question "what does our platform do?" not "what happened in the Acme Corp security review?"
+
+**Episodic memory** is the record of specific events. Call notes, email threads, POC results, stakeholder reactions. This is exactly what your account context file stores in the `history` array. It answers the question "what happened in this specific deal?"
+
+All three matter, and they are not interchangeable. A skill library without account context produces generic output. Account context without skills produces context that the agent cannot act on effectively. Semantic knowledge without episodic context means your agent knows your platform cold but has no idea that Acme Corp already rejected the standard deployment model in November.
+
+<Callout type="key">
+For SEs: your skill library is procedural memory. Your references/ directories are semantic memory. Your account context files are episodic memory. Investing in all three compounds — each layer makes the others more valuable.
+</Callout>
+
+## Auto Memory: Claude's Own Notes
+
+Subagents configured with `memory: project` accumulate knowledge across sessions automatically. Claude writes patterns it discovers into a `MEMORY.md` file in your project directory: observations like "The VP of Engineering at this account prefers architecture diagrams over feature-level bullet points" or "Discovery questions framed around compliance risk land better than those framed around performance."
+
+The first 200 lines of `MEMORY.md` inject into every session automatically. This means the signal your agent captures during a live deal becomes context for the next session without any manual intervention on your part.
+
+You can seed this file manually with standing observations you already carry, then let the agent extend it. Review it quarterly and prune entries that are no longer accurate. The combination of structured YAML context and agent-authored memory notes gives you both the queryable structure of a database and the flexible pattern recognition of a working notebook.
+
+The next lesson closes out Module 5 with deployment: how to distribute what you have built to your team, and how to measure whether any of it is actually working.
+
+<KnowledgeCheck
+  question="An SE has a context file for Acme Corp with a stakeholder entry showing the VP of Engineering's stance as 'cautiously positive,' last updated 90 days ago. The confidence_score has dropped to 0.45. What should the agent do when preparing a follow-up email?"
+  options={[
+    "Use the stakeholder stance as-is — 90 days is within normal tolerance for stakeholder information",
+    "Refuse to generate output until the context file is manually updated with fresh information",
+    "Generate the email while signaling that stakeholder context may be stale and assumptions should be verified before sending",
+    "Ignore the stakeholder field and generate a generic email to avoid acting on outdated information"
+  ]}
+  correct={2}
+  explanation="When confidence_score drops below 0.6, the agent adjusts its tone: 'Based on limited context for this account, verify these assumptions before the call.' This is the system correctly signaling that it needs fresh input rather than confidently producing stale output. Refusing to generate output is too conservative — partial context is better than no context, as long as the agent signals its uncertainty."
+/>
+
+<KnowledgeCheck
+  question="What is the correct precedence order when all three CLAUDE.md hierarchy levels are active simultaneously?"
+  options={[
+    "Personal level overrides account level, which overrides shared rules",
+    "Shared rules override account level, which overrides personal level",
+    "Account level overrides personal level defaults; organization policy overrides both",
+    "All three levels have equal weight — Claude weighs them based on relevance"
+  ]}
+  correct={2}
+  explanation="The more specific level takes precedence when there is a conflict. Account-level context (./CLAUDE.md) can override personal defaults (~/.claude/CLAUDE.md) because it is more specific to the current work. But organization policy (managed-policy/CLAUDE.md) overrides everything — child layers specialize but cannot loosen constraints set by parent layers. Personal preferences shape how you work; they cannot override compliance requirements or account-level context."
+/>
+
+<KeyTakeaways items={[
+  "Account context files are the highest-leverage investment in your agent stack — they convert generic skill outputs into deal-specific, stakeholder-aware, historically-grounded responses.",
+  "Every field in the account context file does active work: competing_with loads battlecards automatically, communication_style shapes email tone, tech_stack defaults POC architecture choices.",
+  "Three patterns make account context manageable at scale: lazy initialization from CRM, incremental enrichment via agent proposals after calls, and staleness detection with confidence scoring.",
+  "The three memory types (procedural in skills, semantic in references/, episodic in account context files) are not interchangeable — investing in all three compounds, and each layer makes the others more valuable.",
+  "Auto memory (MEMORY.md with memory: project) captures learned patterns across sessions automatically, building institutional knowledge about an account without manual intervention."
+]} />
+
+<SelfAssessment items={[
+  "I can write a structured account context file with the key fields (account, deal, stakeholders, tech_stack, history, open_items) and explain what work each field does for my agent.",
+  "I can describe which of the three CLAUDE.md hierarchy levels a given piece of information belongs to and why.",
+  "I can explain the three patterns (lazy initialization, incremental enrichment, staleness detection) for maintaining account context across a large territory.",
+  "I can distinguish between procedural, semantic, and episodic memory in my agent stack and identify where each type is stored in Claude Code."
+]} />

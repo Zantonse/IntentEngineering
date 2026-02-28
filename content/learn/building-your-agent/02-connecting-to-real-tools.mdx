@@ -1,0 +1,221 @@
+---
+title: "Connecting to Real Tools"
+description: "MCP integrations, dynamic context injection, and hooks that connect your SE agent to CRM, email, call recordings, and knowledge bases."
+order: 2
+module: "building-your-agent"
+---
+
+## The Integration Gap
+
+A well-designed skill library is a significant asset. But skills alone work with files on disk. Your actual SE work lives somewhere else — opportunity records in Salesforce, deal notes in Notion, call recordings in Gong, email threads in Gmail, internal discussion in Slack. The skill that cannot see any of that is working blind.
+
+Two mechanisms bridge this gap. MCP servers provide standardized, persistent connections to external systems — once configured, they are available to your agent across all sessions. Dynamic context injection uses the `!``command`` pattern to pull live data into a skill at the moment of invocation. Most production SE agents use both.
+
+## MCP Servers for SEs
+
+The Model Context Protocol gives Claude Code standardized access to external APIs through a server abstraction. You configure a server once; your skills and subagents can use it in any session. The practical benefit is that your agent can read from and write to your actual systems of record, not just files you have exported manually.
+
+The integration landscape for SEs breaks into two tiers organized by what to set up first.
+
+**Tier 1 — Start here.**
+
+Salesforce (official Salesforce MCP, currently in beta) or HubSpot (official beta) handles the CRM layer. With either connected, your agent can pull account details, opportunity stage, contact history, and activity logs without you copying anything manually. Post-call logging can happen directly from the agent session. Pre-call briefing pulls fresh data rather than whatever you last synced.
+
+Slack (official Slack MCP) enables searching deal-related channel history, pulling internal expert input on technical questions, and posting deal updates to team channels. It is also useful for routing questions to the right SME without leaving your agent session.
+
+Notion (official) or Google Drive (official) gives your agent access to product documentation, sales playbooks, case studies, and competitive decks. These are your knowledge base — the semantic memory layer that your skills reference when drafting content.
+
+**Tier 2 — Add next.**
+
+Gmail and Google Calendar via Composio handle outbound communication. Your follow-up skill can draft and send the email. Your scheduling skill can book the next meeting. These remove the manual step between Claude generating an output and that output reaching the customer.
+
+Fireflies.ai provides programmatic access to past call transcripts and extracted action items. This is the integration that turns your agent from something that helps you prepare to something that learns from what happened. A discovery prep skill that can search your last three calls with a prospect is categorically more useful than one that cannot.
+
+Zapier MCP bridges to tools without native MCP support — Gong, PandaDoc, DocuSign, and several thousand others. It is not the cleanest integration, but it extends reach significantly. Use it for tools where a direct integration does not exist yet.
+
+<Callout type="tip">
+Scope MCP permissions to what each task actually requires. A research subagent does not need write access to the CRM — and granting it unnecessarily creates risk. The subagent that does deal research should have read-only CRM access. The subagent that logs call summaries should have write access to activities only.
+</Callout>
+
+Here is what MCP configuration looks like inside a subagent definition:
+
+```yaml
+---
+name: deal-researcher
+description: Research agent with CRM and knowledge base access
+tools: Read, Glob, Grep
+mcpServers:
+  salesforce: { command: "python", args: ["-m", "sf_mcp_server"] }
+  notion: { command: "npx", args: ["notion-mcp-server"] }
+---
+
+## Instructions
+Research the named account and produce a deal brief covering:
+1. CRM record: opportunity stage, amount, close date, recent activity
+2. Stakeholder map: contacts on record, their titles, last interaction
+3. Relevant case studies: two or three from Notion that match the prospect's industry
+4. Open questions: anything in the CRM notes flagged for follow-up
+```
+
+The subagent receives MCP access scoped to its task. It does not inherit tools from the parent session unless explicitly granted. This is intentional — a research subagent does not need write access to the CRM. Scope permissions to what the task actually requires.
+
+## Dynamic Context Injection
+
+MCP servers handle persistent connections to structured data. Dynamic context injection handles everything else — any data source you can query from the command line, whether or not it has an MCP server.
+
+<Callout type="key">
+The `!``command`` pattern executes a shell command at skill load time. The output replaces the command inline, so Claude receives the result rather than the command itself. This runs before Claude processes any of the skill content. There is no back-and-forth — the data is already present when Claude starts reading.
+</Callout>
+
+Here is a `prep-call` skill using both CRM and calendar injection:
+
+```yaml
+---
+name: prep-call
+description: This skill should be used when the user asks to "prepare for a call",
+  "prep for my meeting with [prospect]", or "build a pre-call brief".
+disable-model-invocation: true
+---
+
+## Account: $ARGUMENTS
+
+### CRM Context
+!`sf data query --query "SELECT Name, StageName, Amount, CloseDate, Description FROM Opportunity WHERE Account.Name LIKE '%$ARGUMENTS%' ORDER BY LastModifiedDate DESC LIMIT 1" --json | jq -r '.result.records[0] | "Stage: \(.StageName)\nAmount: $\(.Amount)\nClose Date: \(.CloseDate)\nNotes: \(.Description)"'`
+
+### Recent Activity
+!`sf data query --query "SELECT Subject, ActivityDate, Description FROM Task WHERE Account.Name LIKE '%$ARGUMENTS%' ORDER BY ActivityDate DESC LIMIT 5" --json | jq -r '.result.records[] | "[\(.ActivityDate)] \(.Subject): \(.Description)"'`
+
+### Today's Calendar
+!`gcalcli agenda today tomorrow 2>/dev/null | head -20`
+
+## Preparation Instructions
+Using the account context above, prepare a pre-call brief with:
+1. Deal status and what has changed since the last interaction
+2. Open items and follow-ups from previous calls
+3. Recommended agenda for today's meeting
+4. Two to three targeted questions based on current stage and open items
+```
+
+When you invoke `prep-call Acme Corp`, the CRM queries run against live Salesforce data and the calendar injection pulls today's schedule. Claude sees rendered output with actual data. The prep brief it produces reflects the current state of the deal, not whatever you remembered to copy into the session.
+
+The `$ARGUMENTS` variable passes the argument you provide at invocation time — the account name, prospect name, or deal name. Use it in every dynamic injection that needs to be scoped to a specific account.
+
+## Hooks for SE Automation
+
+Hooks let you attach automation to specific points in Claude's execution lifecycle. Three patterns are directly useful for SE workflows.
+
+### SessionStart — Inject deal context on open
+
+A SessionStart hook runs when a session begins. The script has access to the working directory and any environment variables you have set. For an SE, the most practical use is detecting which deal directory you are working in and pre-loading the relevant CRM context.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python ~/.claude/hooks/load_deal_context.py"
+      }
+    ]
+  }
+}
+```
+
+The `load_deal_context.py` script checks the current directory path, infers the account name from the directory structure, queries Salesforce for that account, and writes a `context/deal-state.md` file to the session directory. Your skills reference that file rather than running CRM queries on every invocation. The session opens with deal context already present.
+
+### PostToolUse — Auto-log activities to CRM
+
+A PostToolUse hook fires after Claude completes a specific tool action. Set `"async": true` so the hook runs in the background without blocking Claude from continuing work. The most useful SE application is auto-logging to CRM whenever Claude writes a file that looks like customer-facing output.
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "type": "command",
+        "command": "python ~/.claude/hooks/crm_activity_log.py $CLAUDE_TOOL_OUTPUT_FILE",
+        "async": true
+      }
+    ]
+  }
+}
+```
+
+The hook script inspects the file path and contents, determines if it looks like customer-facing output (follow-up email, proposal section, RFP response), and logs an activity against the relevant CRM account if it does. CRM logging that used to require a separate manual step happens automatically in the background.
+
+### Stop — Validate output before delivery
+
+A Stop hook fires before Claude ends a session or hands output back to you. Use it as a quality gate: check for placeholder text, missing required sections, unsubstantiated capability claims, or anything that should not leave the session without review.
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python ~/.claude/hooks/output_validator.py"
+      }
+    ]
+  }
+}
+```
+
+The validator script scans recent file writes for patterns like `[INSERT]`, `[TBD]`, `PLACEHOLDER`, or claims that match your list of terms requiring substantiation — benchmark numbers, customer count claims, uptime guarantees. If any are found, the hook surfaces a warning before output reaches you. The cost is a half-second validation step. The benefit is catching the kind of error that matters most when something is going to a customer.
+
+<Callout type="example">
+The three hooks work together as a pipeline: SessionStart loads deal context so every skill invocation in that session starts from current reality. PostToolUse logs completed work to CRM automatically. Stop validates that nothing problematic leaves the session. Together they close the loop between agent output and your systems of record — without requiring manual steps between them.
+</Callout>
+
+## The Three-System Foundation
+
+The most powerful SE agent is not the one with the most integrations. It is the one with reliable access to three specific systems, deeply connected rather than shallowly integrated with many.
+
+**CRM as system of record.** Every deal, contact, activity, and stage lives here. Your agent reads from it for context and writes to it after actions. Without CRM access, your agent is working from snapshots. With it, every skill invocation starts from current reality.
+
+**Communication layer for outbound actions.** Email and calendar are where SE work leaves your hands and reaches customers. Your agent cannot complete a follow-up workflow without the ability to send. This does not mean you remove human review — `disable-model-invocation: true` on any outbound skill keeps you in the loop. It means the mechanical work of formatting, addressing, and queuing the email does not require manual copy-paste.
+
+**Knowledge base for product and competitive intelligence.** Notion, Google Drive, or Confluence — wherever your team stores product capability docs, competitive analyses, case studies, and playbooks. This is the semantic memory layer that makes your skills actually know things. A battlecard skill without access to your competitive intelligence is worse than useless; it drafts with confidence from stale data. With current knowledge base access, it drafts from what the team actually knows today.
+
+Set up reliable access to these three before adding anything else. A calendar integration is useful. A Gong integration is useful. But an agent that reads CRM data, can send email, and knows your current competitive position is useful every day. Build the foundation first, then expand.
+
+In the next lesson, we build the account context system — the persistent episodic memory layer that makes your agent smarter over time as it accumulates call notes, deal history, and customer-specific knowledge.
+
+<KnowledgeCheck
+  question="You want your agent to automatically log a CRM activity whenever it writes a follow-up email file. Which hook type should you use, and why?"
+  options={[
+    "SessionStart — run the logging script when the session opens",
+    "PostToolUse with async: true — fire after Claude writes a file, without blocking further work",
+    "Stop — validate and log before the session ends",
+    "PreToolUse — intercept the Write action before it executes"
+  ]}
+  correct={1}
+  explanation="PostToolUse fires after Claude completes a specific tool action (Write in this case). Setting async: true means the logging script runs in the background without blocking Claude from continuing work. The script then inspects the file and logs to CRM if it's customer-facing output. SessionStart runs once at session open — too early. Stop runs at the end — too late if Claude wrote multiple files during the session."
+/>
+
+<KnowledgeCheck
+  question="What is the primary difference between MCP servers and dynamic context injection (`!command`) as integration mechanisms?"
+  options={[
+    "MCP servers are only available for Tier 1 integrations; dynamic injection works for any tool",
+    "MCP servers provide persistent connections configured once and reused across sessions; dynamic injection executes a command at skill load time for any CLI-accessible data source",
+    "Dynamic injection is faster than MCP servers because it bypasses the protocol overhead",
+    "MCP servers are for read operations only; dynamic injection supports both read and write"
+  ]}
+  correct={1}
+  explanation="MCP servers provide standardized, persistent connections to external systems — configured once, available to your agent across all sessions. Dynamic context injection (the !command pattern) executes a shell command at the moment a skill runs and injects the output directly into context. It works for any data source accessible from the command line, with or without an MCP server. Most production agents use both: MCP for structured data systems, dynamic injection for tools without MCP support or for one-off queries."
+/>
+
+<KeyTakeaways items={[
+  "Two mechanisms bridge the gap between skill files and live data: MCP servers (persistent, configured-once connections) and dynamic context injection (command execution at skill load time).",
+  "Build CRM integration, outbound communication, and knowledge base access first — these three form the foundation that makes your agent useful every day.",
+  "The three hook patterns that matter most for SE workflows are SessionStart (load deal context), PostToolUse async (auto-log to CRM), and Stop (validate output before delivery).",
+  "Scope MCP permissions to what each subagent task actually requires — read-only access where write is not needed is a capability boundary that prevents accidental record updates.",
+  "The $ARGUMENTS variable passes your invocation argument into dynamic injection commands, scoping CRM queries and calendar lookups to the specific account you name at runtime."
+]} />
+
+<SelfAssessment items={[
+  "I can explain the difference between MCP server connections and dynamic context injection, and identify which is appropriate for a given integration scenario.",
+  "I can write a SKILL.md that uses the !command pattern to inject live CRM data at invocation time using $ARGUMENTS to scope the query.",
+  "I can configure the three key hook types (SessionStart, PostToolUse, Stop) and explain what each one does in an SE automation workflow.",
+  "I can identify which three systems form the foundation of an effective SE agent and explain why to build them before adding additional integrations."
+]} />

@@ -1,0 +1,163 @@
+---
+title: "Evaluation and System Design"
+description: "Defining success before you build, measuring outcomes after, and assembling complete intent systems — the capstone of intent engineering."
+order: 4
+module: "intent-engineering"
+---
+
+Research on AI agent deployment shows that only 11% of organizations have reached production scale. That's not a model problem. The models are capable enough. It's a design problem — specifically, an evaluation problem. The teams in the top 15% share a key practice: they define success criteria before development begins. Everyone else builds something, ships it, and hopes "it seems to work" is good enough. It isn't.
+
+<Callout type="key">
+Evaluations are not tests you run after you build. They are specifications that shape what you build in the first place. If you cannot describe what "working correctly" looks like for a skill before you write the first line of SKILL.md, you don't understand the problem well enough to solve it.
+</Callout>
+
+Evaluation discipline is what separates a deployed SE agent from a perpetual prototype.
+
+## What to Measure
+
+Traditional software metrics — accuracy, latency, uptime — don't translate cleanly to agent behavior. An SE skill system needs different measures.
+
+**Tool Selection Quality.** Did Claude pick the right skill for the request? This is entirely determined by your trigger description. If the discovery-questions skill fires when someone asks for demo prep materials, that's a tool selection failure regardless of how good the output is. The output was never the problem — the routing was.
+
+**Action Advancement.** Did the output actually move toward the user's goal? "Did it produce questions?" is too coarse a measure. "Are these questions specific enough to run an effective discovery with Acme's procurement team?" is the real question. Action advancement evaluates output against intent, not just against format.
+
+**Action Completion.** Did the system accomplish all stated goals? If a constraint said to cover all four evaluation categories and the output covers three, that's an incomplete action — even if the three covered sections are excellent. Partial completion is a failure mode, not a partial success.
+
+**Efficiency.** How many tokens, steps, and tool calls did it take? Research documents 50x cost variability between different implementations of identical tasks. If your RFP analysis pipeline consumes 200,000 tokens when a well-designed version of the same pipeline would use 40,000, you have an efficiency problem with real cost implications that compound across every invocation.
+
+**Reasoning Coherence.** Are the decisions internally consistent? Does the system follow through on stated constraints, or does it contradict itself across steps? An orchestrated pipeline that announces it will prioritize security requirements in step two and then ignores them in step five has a coherence failure — the output may look complete but the reasoning isn't sound.
+
+## The Three Evaluation Loops
+
+### 1. Trigger Testing
+
+Does the right skill fire on the right requests — and stay silent on the wrong ones?
+
+Test with real user phrases, not the phrases you wrote when building the trigger description. Ask a colleague to describe the same task in their own words and see whether the skill fires. If more than 20% of natural variations miss the trigger, the description needs to be broadened.
+
+Test boundary cases just as carefully. Does the discovery-questions skill fire when someone asks for "interview questions for a candidate"? It shouldn't — the surface similarity is superficial, the domain is different. Boundary testing reveals whether your trigger description is precise or just approximate.
+
+### 2. Quality Testing
+
+Run the skill on three to five representative scenarios drawn from your actual work — different prospect profiles, different deal stages, different industries. For each run, evaluate output against your defined criteria, not just "does this look right?"
+
+Use the constraint hierarchy from the previous lesson as your rubric. Did the output satisfy every NON-NEGOTIABLE constraint? Did it satisfy HIGH constraints? Did it make reasonable tradeoffs on MEDIUM and LOW constraints, and are the tradeoffs defensible? A quality test without a rubric is just an impression. An impression is not an evaluation.
+
+### 3. System Testing
+
+For orchestrated workflows, test the full pipeline end-to-end — not each step in isolation. State passing between steps is where most failures happen in practice. Does step two's output contain everything step three needs as input? Are constraints defined in the first step still respected by the fourth? Do failure modes in one step propagate gracefully rather than silently corrupting downstream output?
+
+<Callout type="warning">
+Single-step testing builds confidence in components. System testing builds confidence in the whole. Most teams over-invest in testing individual skills and under-invest in testing the full pipeline — which is where state-passing failures and constraint drift actually show up.
+</Callout>
+
+## The CLEAR Framework
+
+A practical rubric for evaluating SE skill systems before and after deployment:
+
+**Cost** — What does a typical invocation cost in tokens and API calls? Is that proportional to the value delivered? A skill that costs 15,000 tokens to draft five discovery questions is not cost-proportionate. A skill that costs 80,000 tokens to generate a complete RFP response package might be.
+
+**Latency** — How long does the full workflow take? Is that fast enough for the use case? Call prep that takes three hours to run is not useful if the call is in four hours. Same-day delivery is a constraint, not a preference — build and test accordingly.
+
+**Efficacy** — Did the agent accomplish its stated goals? A step that completes without errors but produces output that does not satisfy the skill's defined objectives is an efficacy failure. Efficacy failures often appear only at system test time, when the goal defined in step one is no longer being honored by step five. Check whether each step's output actually advances the goal, not just whether it produces output.
+
+**Assurance** — How confident are you that the output is correct? What's the failure rate on your representative test cases? Assurance is not a feeling — it's a number derived from running real tests against real scenarios.
+
+**Reliability** — Does it work consistently, or does quality vary significantly between runs on the same input? High variance is a sign of ambiguous process steps. If two runs of the same skill on the same input produce meaningfully different outputs, the instructions are too open to interpretation.
+
+<Callout type="tip">
+For individual SE use, start with Reliability and Assurance — does it work consistently, and can you trust the output? Cost and Latency become primary concerns at team-scale deployment where every invocation multiplies across the whole team.
+</Callout>
+
+## Designing the Complete System
+
+Individual skills are components. Your SE agent is the architecture those components live inside. Four layers, each depending on the ones below it:
+
+```
+┌─────────────────────────────────────────┐
+│           EVALUATION CRITERIA           │
+│  (How do we know it worked?)            │
+├─────────────────────────────────────────┤
+│        GOALS + CONSTRAINTS              │
+│  (What must be accomplished, within     │
+│   what boundaries?)                     │
+├─────────────────────────────────────────┤
+│       CONTEXT ENGINEERING               │
+│  (What information, loaded how?)        │
+│  Write / Select / Compress / Isolate    │
+├─────────────────────────────────────────┤
+│         SKILLS + TOOLS                  │
+│  (What can the system do?)              │
+│  SKILL.md files, scripts, references    │
+└─────────────────────────────────────────┘
+```
+
+Evaluation criteria reference goals — you can only evaluate against what you said mattered. Goals reference available context — a goal that requires information the system cannot access is not achievable. Context feeds into skills — the skill is only as good as what it knows. Skills are the execution layer — everything above them specifies what correct execution looks like.
+
+The design process runs top-down, even though the execution runs bottom-up:
+
+1. Define evaluation criteria — what does success look like, specifically and measurably?
+2. Establish goals and constraints — what must the system accomplish, and what are the non-negotiable limits?
+3. Design the context strategy — what information does the system need, and how should it flow between steps?
+4. Build the skills and tools — what capabilities does the system need to execute?
+
+<Callout type="example">
+Most people build bottom-up: write a skill, see if it does something useful, add another skill, hope the system coheres. Intent engineering starts with the end state and works backward. The skill you build last — in terms of design order — is the first thing you deploy. The evaluation criteria you define first are the specification everything else is built to satisfy.
+</Callout>
+
+## Try It: Design an Intent Architecture
+
+Start with the SE Discovery System preset to see how goals, constraints, memory, skills, and evaluation connect for a familiar workflow. Notice how the NON-NEGOTIABLE constraints reference specific skills — and how the evaluation criteria map directly to those constraints. Then try the RFP Response System preset to see how a different workflow changes every layer. When you build your own, start with the goal — define what success looks like before configuring anything else.
+
+<IntentArchitectDesigner />
+
+## Where You Go From Here
+
+You started this course with the most concrete possible building block: a skill file — a packaged domain workflow that Claude can invoke by name. You learned to write them with clear triggers and precise process steps, test them systematically, and compose them into orchestrated pipelines. Then you learned how those pipelines live inside a larger architecture of context, memory, goals, constraints, and evaluation. Together, those layers are what turn Claude Code into your SE agent.
+
+The discipline is still emerging. The tooling is evolving quickly. But the underlying principle is stable: the difference between a general-purpose assistant and a specialized agent is design. Not model selection. Not prompt length. Design — starting from a clear picture of what success looks like and working backward through everything the agent needs to get there.
+
+Start with one skill for your most repetitive SE task. Define what "working correctly" means before you write a single line. Test it against real scenarios. Add a second skill. Connect them with orchestration when a single skill's scope is too narrow. Layer in memory and constraints when context passing becomes a bottleneck. Evaluate whether your agent actually works — not whether it produces output, but whether it advances the outcomes that matter.
+
+Module 5 puts this into practice — designing your skill library, connecting to real tools via MCP, building account context systems, and measuring results against the criteria you set here. The architecture you have designed in this module becomes the blueprint for the system you build in the next.
+
+That is how you build an SE agent: not by configuring a product, but by engineering the intent.
+
+<KnowledgeCheck
+  question="A trigger test shows that your discovery-questions skill fires correctly on 78% of natural-language variations tested. According to the evaluation guidelines, what should you do?"
+  options={[
+    "The skill is passing — 78% is above the 50% minimum threshold",
+    "The trigger description needs to be broadened — more than 20% of variations are missing",
+    "Run quality testing next before making any changes to the trigger",
+    "The skill has a Reasoning Coherence failure, not a trigger failure"
+  ]}
+  correct={1}
+  explanation="The guideline is: if more than 20% of natural variations miss the trigger, the description needs to be broadened. At 78%, the failure rate is 22% — just over the threshold. This is a Tool Selection Quality problem. The output quality may be excellent, but the skill is not routing reliably enough to be dependable in daily use."
+/>
+
+<KnowledgeCheck
+  question="In the CLEAR framework, which dimension is most directly affected when an orchestrated pipeline's step five ignores security requirements that were prioritized in step two?"
+  options={[
+    "Cost — the pipeline is using more tokens than necessary",
+    "Latency — the pipeline is taking too long to complete",
+    "Efficacy — the step completes without error but does not satisfy stated objectives",
+    "Reliability — the output varies between runs on the same input"
+  ]}
+  correct={2}
+  explanation="This is an Efficacy failure. The step completes without errors and produces output, but that output does not satisfy the constraint stated in the system's goals. Efficacy failures often only appear at system test time — when you test the full pipeline end-to-end and discover that a constraint defined early in the workflow is no longer being honored by later steps."
+/>
+
+<KeyTakeaways items={[
+  "Evaluations are specifications, not afterthoughts — defining success criteria before you build shapes what you build.",
+  "The five SE-specific metrics to measure are Tool Selection Quality, Action Advancement, Action Completion, Efficiency, and Reasoning Coherence.",
+  "The three evaluation loops — trigger testing, quality testing, and system testing — must all be run; single-step testing misses state-passing and constraint drift failures that only appear in the full pipeline.",
+  "The CLEAR framework (Cost, Latency, Efficacy, Assurance, Reliability) provides a practical rubric for measuring skill system quality before and after deployment.",
+  "The design process runs top-down (evaluation → goals → context → skills) even though execution runs bottom-up — start with success criteria and work backward."
+]} />
+
+<SelfAssessment items={[
+  "I can write specific, measurable evaluation criteria for a skill before writing any SKILL.md content.",
+  "I can identify which of the five SE metrics (Tool Selection, Action Advancement, Action Completion, Efficiency, Reasoning Coherence) a given failure belongs to.",
+  "I can apply the CLEAR framework to assess a skill system and identify which dimension needs the most attention.",
+  "I can explain why system testing is necessary in addition to individual skill testing, and what types of failures only appear at the system level."
+]} />

@@ -1,0 +1,155 @@
+---
+title: "Deploying and Measuring"
+description: "Team distribution via plugins, the feedback loop that makes your agent smarter, and measuring whether any of this actually works."
+order: 4
+module: "building-your-agent"
+---
+
+## From Personal Agent to Team Platform
+
+You have built skills, connected tools, and structured account context. The last step is getting it in front of your team and building the feedback loop that makes the system improve over time rather than stagnate.
+
+Most SE AI efforts fail at this stage — not because the underlying skills are bad, but because distribution is an afterthought and measurement never gets set up at all. Skills that stay on one person's laptop do not compound. Skills that cannot be measured cannot be improved systematically.
+
+This lesson covers both.
+
+## Plugin Distribution
+
+Claude Code plugins package skills, agents, hooks, and MCP server configurations into distributable units that teammates can install with a single command. A plugin is just a directory with a known structure.
+
+```
+se-toolkit-plugin/
+├── .claude-plugin/
+│   └── plugin.json
+├── skills/
+│   ├── prep-call/SKILL.md
+│   ├── draft-rfp/SKILL.md
+│   └── battle-card/SKILL.md
+├── agents/
+│   └── rfp-researcher.md
+└── hooks/
+    └── hooks.json
+```
+
+The `plugin.json` manifest describes what the plugin contains, its version, its dependencies, and any MCP servers it requires. When a teammate installs the plugin, Claude Code reads the manifest and places the skill files, agent definitions, and hook configurations in the right locations automatically.
+
+For SE teams, a useful model is three distribution tiers, each with different ownership and update cadence:
+
+**Organization skills** are centrally managed by SE leadership or sales enablement. They carry standard methodology, approved messaging, and compliance-reviewed content. Individual SEs can use them but cannot edit them. When your company refreshes its discovery methodology or updates its pricing structure, the change propagates to every SE's agent stack simultaneously. This is the tier where your "write POC success criteria" and "respond to standard security questionnaire" skills should live.
+
+**Team skills** are owned by vertical or segment teams. An FSI team maintains discovery questions specific to banking and insurance compliance. A healthcare team maintains HIPAA-aware messaging guidelines. These skills reflect the accumulated expertise of the team and update as the team learns. Individual SEs contribute to them but do not own them unilaterally.
+
+**Personal skills** are SE-owned workflow customizations. Your particular way of structuring a call prep document, your preferred format for competitive analysis, the post-call debrief template that matches how your manager wants updates. These stay local unless you choose to promote them to a team skill.
+
+<Callout type="key">
+This tier structure prevents the two failure modes that kill most team tool deployments: skill sprawl (everyone builds their own version of the same thing, none of them good) and skill rigidity (everything is locked down by policy, individuals cannot customize for their workflow).
+</Callout>
+
+## The Feedback Loop
+
+Skills are not documents you write once and file. They are hypotheses about what good SE work looks like — hypotheses that need to be tested against real deal outcomes and refined accordingly.
+
+The feedback loop has four stages.
+
+**Signal collection** is the foundation. You need passive telemetry on which skills are used, which outputs get edited before sending, and which are discarded entirely. Passive is the key word here. If SEs have to actively log skill usage or rate outputs, they will not do it consistently after the first week. Build the instrumentation into the agent hooks from the start so usage data accumulates without requiring any deliberate action from the SE.
+
+The most valuable signal is edit distance — how much did the SE change the output before using it? An output that gets sent with no changes is a strong signal. An output that gets rewritten substantially is telling you something the skill is missing. That delta, captured consistently across your team, is a direct read on skill quality.
+
+**Outcome attribution** connects agent contributions to deal results. After a deal closes — whether won or lost — a structured debrief asks: which skill outputs helped in this deal? Which did the SE rewrite before using? Which were ignored? This is qualitative data, not telemetry, and it requires a process to collect it. The debrief does not need to be long. Three questions, five minutes, after every deal closure. Compounding over a quarter of deal closures produces enough signal to identify which skills are actually moving deals.
+
+**Skill revision** is what happens when signal accumulates. Skills with consistently high edit rates get flagged for review. The review process is simple: look at the edit deltas. What did SEs consistently add that the skill missed? What did they consistently remove? What did they rewrite every time? The pattern in those edits is the improvement the skill needs. Add the missing content, remove the consistently-cut content, and revise the process documentation to match what SEs actually do rather than what you thought they did when you wrote the first version.
+
+**Iteration** closes the loop. Revise skills based on signal, bump the version in the manifest, and redistribute. The best SE teams review skill quality once a quarter — not continuously, which creates churn, and not annually, which means skills go stale. Quarterly is enough cadence to improve systematically without destabilizing the workflow.
+
+<Callout type="tip">
+The most actionable short-term signal in your dataset is a skill with initial usage that drops sharply after the first week. That means an SE tried it, found it inadequate, and stopped. That is not failure — it is a precise diagnostic telling you exactly which skill needs attention and roughly when the SE gave up on it.
+</Callout>
+
+## Measuring What Matters
+
+Three measurement tiers, in increasing order of importance and increasing order of difficulty.
+
+**Time savings** are the easiest to measure and the right place to start. Baseline first: before deployment, ask your team how many hours per week they spend on call prep, follow-up emails, and RFP responses. Get specific numbers. A vague "it takes forever" is not a baseline you can measure against. After deployment, resurvey monthly for the first quarter. Anecdotally, early adopters report significant time savings — on the order of 40 to 60 percent reduction in prep time within 90 days. That number is credible to leadership, easy to communicate, and gives you a mandate to invest further.
+
+**Quality metrics** are harder to collect and more important. Two numbers matter most.
+
+Edit rate — the percentage of agent output used without modification — is your primary skill quality indicator. A high edit rate does not mean quality is high; it might mean SEs have stopped trying to improve bad output. A declining edit rate over time, combined with stable or improving deal outcomes, is the signal you want. It means skills are getting more accurate as they learn from feedback.
+
+Win rate on agent-assisted deals versus a control group is the metric that matters to your business, but it matures slowly. You need at least 50 deals per group for statistical significance, and your deal cycle may be long enough that it takes six months to accumulate that sample. Set up the tracking from day one, but do not expect a credible win rate comparison in the first quarter.
+
+Deal velocity — are agent-assisted deals moving through stages faster — sits between time savings and win rate in both difficulty and importance. Stage-to-stage conversion timing is typically available in your CRM, and it compounds across the funnel: if technical evaluation averages two weeks faster because your agent accelerates POC planning and documentation, that improvement shows up in your overall sales cycle time.
+
+**Usage patterns** are diagnostic rather than outcome-oriented, but they are often the most actionable data in the short term. Which skills get used frequently? Which are abandoned after a single try? The pattern reveals where your skill library actually delivers value versus where it looked good in a demo but failed in practice.
+
+<Callout type="example">
+A skill with high usage and low edit rate is working. Study what it does well and apply those patterns when you build or revise other skills. A skill with initial usage that drops sharply after the first week is a precise diagnostic — an SE tried it, found it inadequate, and stopped. That tells you exactly which skill needs attention.
+</Callout>
+
+## The Competitive Landscape
+
+Commercial SE platforms — Vivun, SiftHub, Responsive, and their peers — target SE managers with team analytics dashboards, CRM integration, and workflow automation at the org level. They are built for procurement decisions and IT governance, with the tradeoffs that implies: standardized workflows, vendor-managed knowledge bases, limited customization below the team tier.
+
+Claude Code agents target the individual SE practitioner. Total customization, knowledge you own and control, MCP composability with any tool in your stack. The agent you build reflects your actual methodology, your actual competitive positioning, your actual account context — not a vendor's template of what SE work looks like.
+
+These are complementary, not competing. Commercial platforms provide team infrastructure, reporting, and CRM-layer automation. Claude Code agents provide personal competitive edge and workflow customization that no commercial platform can match because no commercial platform knows your accounts the way you do.
+
+The "AI-native SE" — the practitioner who builds and maintains their own agent stack — is an emerging archetype with compounding advantages. Every deal worked builds the account context library. Every skill refined gets sharper. Every quarter of feedback loop data produces better outputs. The SE who invests in this system at the start of their use of AI-native tools accumulates an advantage that is genuinely hard to replicate quickly.
+
+## Where You Go From Here
+
+This is the end of the five-module course. Here is what you built:
+
+Module 1 established what skills are — the atomic unit of reusable AI capability — and why the skill abstraction is the right unit for SE workflows.
+
+Module 2 walked through building skills end-to-end, from identifying repeating tasks to writing SKILL.md files that produce output worth using.
+
+Module 3 covered skill composition — how you connect skills into multi-step workflows, how agents orchestrate across skills, and how hooks automate the transitions between them.
+
+Module 4 designed the system architecture: the memory hierarchy, the tool integration layer, the MCP server pattern, and how all the pieces fit together into a coherent agent stack.
+
+Module 5 put it into practice with real tools, real account context, and a measurement framework you can run against actual deal outcomes.
+
+The agent gets better every quarter if you invest in the feedback loop. The skills you built are not static documents — they are a living system that compounds with every deal you work, every edit delta your team generates, and every quarterly revision cycle you complete.
+
+The best SE agent is the one you actually use. Start with three skills, one CRM integration, and one account context file. Ship it. Measure it. Iterate.
+
+In the next lesson, you will build a verification skill from scratch — applying every design pattern from this module to create a tool that audits your own content for hallucinations and factual accuracy. It is the evaluation layer made concrete.
+
+<KnowledgeCheck
+  question="Your SE team has been using a battlecard skill for three months. Usage data shows it was heavily used in month one, then dropped to near zero by month two. What does this most likely indicate?"
+  options={[
+    "The skill is working well — SEs have internalized the content and no longer need it",
+    "The skill had high initial novelty but failed to deliver enough value in real use, and needs to be diagnosed and revised",
+    "SEs are using the skill correctly by only invoking it for new competitive situations",
+    "The usage drop indicates the skill is triggering too often and firing when it should not"
+  ]}
+  correct={1}
+  explanation="A sharp drop in usage after initial adoption is the most actionable signal in your dataset. It means an SE tried the skill, found it inadequate for real-world use, and stopped. Review the edit deltas from the month-one usage: what did SEs consistently add that the skill missed? What did they rewrite? The pattern in those edits is the improvement the skill needs."
+/>
+
+<KnowledgeCheck
+  question="You want to set up passive signal collection for skill quality without requiring SEs to manually rate outputs. Which approach captures the most valuable signal?"
+  options={[
+    "Send a weekly survey asking SEs to rate each skill they used that week on a 1-5 scale",
+    "Build PostToolUse hooks that capture edit distance — how much the SE changed the output before sending it",
+    "Track which skills fire most frequently using SessionStart hooks",
+    "Review CRM notes monthly to see if deal notes reference Claude-generated content"
+  ]}
+  correct={1}
+  explanation="Edit distance — how much the SE changed the output before using it — is the most valuable passive signal. It is captured automatically via PostToolUse hooks without requiring any deliberate action from the SE. An output sent with no changes is a quality signal. An output substantially rewritten is telling you exactly what the skill is missing. Surveys require active effort and drop off quickly. Frequency alone (how often a skill fires) does not measure quality."
+/>
+
+<KeyTakeaways items={[
+  "Plugin distribution with three tiers (organization, team, personal) prevents both skill sprawl and skill rigidity — the right balance of standardization and customization.",
+  "The feedback loop runs in four stages: signal collection (passive, via hooks), outcome attribution (qualitative, post-deal debrief), skill revision (based on edit deltas), and quarterly iteration.",
+  "Edit distance — how much the SE changed the output before using it — is the single most valuable passive signal for skill quality.",
+  "The three measurement tiers (time savings, quality metrics, usage patterns) have different difficulty levels and timelines: start with time savings, set up win rate tracking from day one, use usage patterns for short-term diagnostics.",
+  "Commercial SE platforms and Claude Code agents are complementary: platforms for team infrastructure and reporting, personal agents for account-specific competitive edge that no vendor template can replicate."
+]} />
+
+<SelfAssessment items={[
+  "I can describe the three plugin distribution tiers and explain which tier a given skill belongs to.",
+  "I can explain the four stages of the feedback loop (signal collection, outcome attribution, skill revision, iteration) and what happens at each stage.",
+  "I can identify the most valuable passive signal for skill quality and explain how to capture it without requiring manual effort from SEs.",
+  "I can set up a measurement framework that tracks time savings immediately and win rate over a longer horizon, and explain why different metrics mature at different timescales."
+]} />

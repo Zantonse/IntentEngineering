@@ -1,0 +1,221 @@
+---
+title: "Memory, Goals, and Constraints"
+description: "Designing the architectural layers that encode what your system wants — memory hierarchies, goal decomposition, and constraint enforcement."
+order: 3
+module: "intent-engineering"
+---
+
+## Beyond Context: What Does Your System Want?
+
+Context engineering answers "what information is relevant?" Intent engineering answers "what must be accomplished?"
+
+These are related but separate questions. A well-engineered context window with no encoded goals produces Claude that is informed but directionless — it knows everything about the prospect but has no framework for what to do with that knowledge. A system with clear goals but poor context produces Claude that knows what to do but lacks what it needs to do it well. You need both layers working together.
+
+A discovery skill that generates 20 questions covering all four required categories but uses generic questions applicable to any prospect is a constraint-level success and an intent-level failure. The skill did what the process said. It did not do what the SE needed.
+
+<Callout type="key">
+Success at the skill level does not guarantee success at the system level. Intent engineering is what bridges that gap.
+</Callout>
+
+## Memory as Persistent Intent
+
+Claude Code's memory hierarchy looks like a file organization system. It is actually an intent architecture.
+
+### The Memory Stack
+
+```yaml
+# Organization layer — enterprise non-negotiables
+managed-policy/CLAUDE.md:
+  "Never expose customer PII in generated output"
+  "All API calls must use the approved authentication flow"
+
+# Project layer — team intent
+./CLAUDE.md:
+  "This is a B2B SaaS product for healthcare"
+  "Use HIPAA-compliant language in all customer-facing output"
+
+# Personal layer — individual workflow preferences
+~/.claude/CLAUDE.md:
+  "I prefer concise output without bullet points"
+  "Always show me the git diff before committing"
+
+# Auto memory — Claude's learned patterns
+~/.claude/projects/<project>/memory/:
+  "The team uses Jest for testing, not Vitest"
+  "API endpoints follow /api/v2/{resource} convention"
+```
+
+Each layer encodes a different scope of intent:
+
+- **Organization**: What must never be violated. Hard constraints that apply regardless of context or user preference.
+- **Project**: What this specific system is for. Domain context, goals, and team conventions.
+- **Personal**: How the individual user works. Preferences that shape output style and format without overriding higher layers.
+- **Auto memory**: What Claude has learned from practice. Adaptive context that accumulates as the system operates.
+
+<Callout type="key">
+The relationship between layers is directional. Child layers specialize but cannot loosen constraints set by parent layers. A project CLAUDE.md can narrow what the organization policy permits; it cannot widen it. This is the mechanism that makes delegation safe.
+</Callout>
+
+This is not just a technical constraint — it is the mechanism that makes delegation safe. You can give team members control over their personal layer without worrying that they will inadvertently override compliance requirements.
+
+### Three Types of Memory
+
+Memory in intent-engineered systems falls into three categories that behave differently:
+
+**Procedural memory** (how to behave) is your CLAUDE.md files and skills library. It encodes operating procedures — what to do in a given situation. Procedural memory is always loaded or loaded on trigger. It is the system's "operating manual."
+
+**Semantic memory** (facts and knowledge) is your references directories, product documentation, and competitive intelligence. It encodes what is true about the domain. Semantic memory loads on demand — pulled in via tools when a workflow needs it.
+
+**Episodic memory** (specific past events) is your call notes, meeting summaries, and session scratchpads. It encodes what happened with specific people and accounts. Episodic memory loads when the current context matches — when you are working on Acme Corp, the Acme Corp call notes become relevant. Subagents configured with `memory: project` extend this further: the subagent accumulates knowledge across sessions, building a persistent record of what it has learned about a project or account rather than starting from scratch on every invocation.
+
+For SEs, this maps directly to how you already work. Your skills library is your procedural memory. Your references directories are your semantic memory. The call notes, account histories, and meeting summaries that accumulate in your CRM and file system are your episodic memory. Intent engineering makes those three layers explicit and loadable rather than things you carry in your head.
+
+<Details title="Deep dive: How the three memory types map to Claude Code artifacts">
+The three memory types are not abstract concepts — each maps to specific Claude Code artifacts you can build and maintain.
+
+**Procedural memory** lives in:
+- `~/.claude/CLAUDE.md` — personal workflow preferences and defaults
+- `./CLAUDE.md` — project or account-level operating guidelines
+- `.claude/rules/*.md` — domain-scoped rules that activate based on file paths
+- `.claude/skills/*/SKILL.md` — individual skill workflows loaded on trigger
+
+**Semantic memory** lives in:
+- `.claude/skills/*/references/` — static domain knowledge per skill
+- `~/.claude/rules/` — shared team knowledge files (product capabilities, competitive positioning)
+- Knowledge base MCP connections (Notion, Google Drive) — live semantic retrieval
+
+**Episodic memory** lives in:
+- Per-account CLAUDE.md files in account directories
+- `history:` arrays in account context YAML files
+- Claude's auto-memory files (`MEMORY.md`) in project directories
+- CRM activity logs, accessible via MCP or dynamic injection
+
+The key insight is that these three types have different loading patterns. Procedural loads at session start or skill trigger. Semantic loads on demand when a workflow needs it. Episodic loads when the current account or project context matches. Knowing which type you are working with tells you where to put it and how it will be loaded.
+</Details>
+
+## Goal Decomposition
+
+Intent-engineered systems declare goals at multiple levels. A single top-level goal is not enough — it needs to decompose into workflow goals, and workflow goals need to decompose into step goals. Each level inherits constraints from above.
+
+### The Goal Hierarchy
+
+```
+System Goal: "Help SEs prepare for and execute technical sales cycles"
+  │
+  ├── Workflow Goal: "Prepare for discovery call with Acme Corp"
+  │     ├── Step Goal: "Gather prospect context"
+  │     ├── Step Goal: "Generate tailored questions"
+  │     └── Step Goal: "Format as call prep document"
+  │
+  └── Workflow Goal: "Respond to Acme Corp RFP"
+        ├── Step Goal: "Parse all requirements"
+        ├── Step Goal: "Map to product capabilities"
+        ├── Step Goal: "Draft compliant responses"
+        └── Step Goal: "Review for consistency"
+```
+
+Each level inherits constraints from above without needing to redeclare them. The RFP response workflow inherits "HIPAA-compliant language" from the project CLAUDE.md automatically. Every step in that workflow operates under that constraint even though no individual step mentions it.
+
+This is what makes goal decomposition valuable — not just clarity, but constraint propagation. You declare compliance requirements once, at the project level, and they apply to every workflow and every step that runs under that project.
+
+In Claude Code, this maps to a specific set of artifacts:
+
+- **System Goal** maps to your CLAUDE.md project instructions — the persistent statement of what this system is for and what it must never do.
+- **Workflow Goal** maps to the orchestration trigger and workflow definition — the entry point and the sequence of steps.
+- **Step Goal** maps to the individual skill's purpose statement — the specific outcome a single skill is responsible for producing.
+
+The hierarchy is not just organizational. It is the mechanism by which intent stays coherent across a complex, multi-step system.
+
+## Constraint Hierarchies
+
+Goals tell the system what to accomplish. Constraints tell it what cannot be compromised in the process. The most consistent finding across intent engineering work is that goals without constraints produce technically correct but organizationally wrong output.
+
+### Priority Levels
+
+```
+NON-NEGOTIABLE — Hard limits. Cannot be crossed under any circumstance.
+  "Never claim capabilities the product does not have"
+  "Always flag compliance-sensitive requirements for human review"
+
+HIGH — Strong preferences. Override lower priorities when in conflict.
+  "Responses should reference prospect-specific context, not generic templates"
+  "Discovery questions should cover all four categories"
+
+MEDIUM — Default behavior. Can be overridden with justification.
+  "Target 15-20 questions per discovery session"
+  "Use the standard call prep template format"
+
+LOW — Nice-to-haves. Dropped first when constraints conflict.
+  "Include follow-up probes for each primary question"
+  "Add competitive positioning notes where relevant"
+```
+
+<Callout type="warning">
+Without explicit priority ordering, Claude treats all instructions as roughly equal weight. When "be thorough" conflicts with "be concise," the system has no mechanism to decide which wins. Priority ordering resolves this — the system knows which constraint governs when they cannot both be satisfied.
+</Callout>
+
+In Claude Code, constraint enforcement is distributed across several mechanisms:
+
+- **CLAUDE.md**: Persistent constraints that are always in context. The right place for NON-NEGOTIABLE and HIGH priority constraints that apply across workflows.
+- **Skill body**: Task-specific constraints loaded when the skill triggers. The right place for MEDIUM and LOW constraints that only apply to a specific workflow.
+- **Hooks**: Programmable constraint enforcement. PreToolUse hooks can block actions before they execute. Stop hooks can verify outputs before they are returned. Hooks enforce constraints that need to be checked programmatically, not just stated in prose.
+- **Subagent permissions**: The `allowed-tools` configuration restricts what a subagent can access. Capability boundaries are a form of constraint enforcement — an RFP-drafting subagent that cannot write to the CRM cannot accidentally update records mid-draft.
+
+Each mechanism operates at a different layer. CLAUDE.md constraints are declared. Hook constraints are enforced. Permission constraints are architectural. A well-designed system uses all three.
+
+## Putting It Together: The SE Discovery System
+
+Consider how all three layers combine for a single concrete example: preparing for a discovery call with Acme Corp, a healthcare prospect.
+
+**Memory** handles the information architecture. The project CLAUDE.md stores team conventions and domain context — "this is a B2B SaaS product for healthcare, use HIPAA-compliant language." Auto memory has captured that Acme Corp is in healthcare and that their last call raised questions about EHR integration. The discovery-questions skill loads on trigger, bringing its full workflow into context. Each type of memory contributes what it knows best.
+
+**Goal decomposition** structures the work. The system goal is "prepare for discovery call." The workflow decomposes into three step goals: gather prospect context, generate tailored questions, and format as a call prep document. Each step has a clear success criterion — context gathered means relevant account history and industry data are assembled; questions generated means a list exists with category coverage verified; format complete means the prep document matches the standard template.
+
+**Constraints** govern the output. NON-NEGOTIABLE: questions must be industry-specific to healthcare, not generic. HIGH: all four discovery categories must be covered. MEDIUM: target 15-20 questions. LOW: include follow-up probes for each primary question.
+
+When Claude generates questions, the constraints cascade in priority order. If it can produce 12 high-quality, industry-specific questions that cover all four categories, that result satisfies the NON-NEGOTIABLE and HIGH constraints — and is better than 20 generic questions that violate the NON-NEGOTIABLE. Constraint priority determines which trade-offs are acceptable and which are not.
+
+The system produces a call prep document that is specific to healthcare, specific to Acme Corp, covers all required categories, and is formatted consistently. None of that required per-call instructions. It was encoded once, in the right layer, and the system applies it every time.
+
+---
+
+The last piece of intent engineering is knowing whether any of this actually works. Goals and constraints are declarations — they express intent. But intent does not guarantee outcome. The next lesson covers evaluation: defining success criteria before you build, and measuring whether the system achieves them after.
+
+<KnowledgeCheck
+  question="A CLAUDE.md at the project level specifies 'Use HIPAA-compliant language in all customer-facing output.' An SE's personal ~/.claude/CLAUDE.md says 'Keep responses informal and conversational.' When generating a follow-up email for a healthcare prospect, which instruction takes precedence?"
+  options={[
+    "The personal CLAUDE.md takes precedence because it is more specific to the user's preferences",
+    "The project CLAUDE.md takes precedence because child layers cannot loosen constraints set by parent layers",
+    "Both apply equally — Claude will attempt to be both HIPAA-compliant and conversational",
+    "Whichever instruction appears first in the context window takes precedence"
+  ]}
+  correct={1}
+  explanation="The relationship between memory layers is directional. Child layers specialize but cannot loosen constraints set by parent layers. The project CLAUDE.md's HIPAA-compliance requirement applies to all customer-facing output from that project, regardless of personal style preferences. Personal preferences can adjust how project goals are pursued — they cannot override those goals."
+/>
+
+<KnowledgeCheck
+  question="Which mechanism is most appropriate for enforcing a constraint that must be checked programmatically — for example, verifying that no customer PII appears in generated output before the output is returned?"
+  options={[
+    "CLAUDE.md — add the constraint as a persistent instruction in the always-on context file",
+    "Skill body — embed the constraint check in the skill's process instructions",
+    "Hooks — use a Stop hook to run a validation script before output is returned",
+    "Subagent permissions — restrict allowed-tools to prevent the skill from accessing PII sources"
+  ]}
+  correct={2}
+  explanation="Hooks are the mechanism for programmatic constraint enforcement. A Stop hook fires before Claude ends a session or returns output, allowing a script to scan for PII patterns and surface a warning before anything reaches the user. CLAUDE.md constraints are declared (Claude is instructed), while Hook constraints are enforced (code actually checks). For constraints that must not rely on Claude following instructions correctly, hooks are the right layer."
+/>
+
+<KeyTakeaways items={[
+  "The three memory types — procedural (how to behave), semantic (domain facts), and episodic (specific past events) — have different loading patterns and belong in different parts of the Claude Code architecture.",
+  "Goal decomposition creates a hierarchy where compliance requirements declared at the project level propagate automatically to every workflow and step below — you declare once, it applies everywhere.",
+  "Constraints without priority ordering leave Claude unable to resolve conflicts. NON-NEGOTIABLE, HIGH, MEDIUM, and LOW priority levels give the system a decision framework when constraints cannot all be satisfied.",
+  "Constraint enforcement is distributed: CLAUDE.md for declared constraints, hooks for programmatically enforced constraints, and subagent permissions for architectural capability boundaries.",
+  "A system with explicit memory, goals, and constraints produces consistent output across every invocation without requiring per-call instructions."
+]} />
+
+<SelfAssessment items={[
+  "I can identify which of the three memory types (procedural, semantic, episodic) a given piece of information belongs to, and where to store it in Claude Code.",
+  "I can decompose a system-level goal into workflow goals and step goals, and explain how constraints propagate down the hierarchy.",
+  "I can assign priority levels (NON-NEGOTIABLE through LOW) to a set of constraints and explain how they resolve conflicts.",
+  "I can describe which constraint enforcement mechanism (CLAUDE.md, skill body, hooks, subagent permissions) is appropriate for a given type of constraint."
+]} />
