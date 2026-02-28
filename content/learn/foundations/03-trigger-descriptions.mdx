@@ -13,6 +13,10 @@ The description field in your frontmatter is evaluated before anything else. Cla
 
 This is why the description is the most important field you'll write. Not the most technically interesting — but the most consequential.
 
+<Callout type="key">
+The description field is a matching rule, not a summary. Claude compares it against the user's actual request to decide whether to load the skill. If nothing matches, no skill loads — regardless of how good the skill body is. Write your description to match what users type, not to describe what the skill does.
+</Callout>
+
 ## Anatomy of a Good Description
 
 A good trigger description has three elements:
@@ -30,7 +34,21 @@ description: This skill should be used when the user asks to "[phrase 1]",
   "[phrase 2]", "[phrase 3]", or mentions [broader context/intent].
 ```
 
+<KnowledgeCheck
+  question="Which of the following is the best trigger description for a skill that helps write follow-up emails after sales calls?"
+  options={[
+    "description: Helps write emails after calls.",
+    "description: Use this skill for post-call communication.",
+    "description: This skill should be used when the user asks to \"write a follow-up email\", \"send a call recap\", \"summarize the call\", or mentions documenting next steps after a prospect meeting.",
+    "description: This skill should be used for all email writing tasks and follow-up communication."
+  ]}
+  correct={2}
+  explanation="Option C follows all three elements: third-person format (\"This skill should be used when the user...\"), specific quoted trigger phrases, and a broader intent catch at the end. Option A is too vague and passive. Option B uses first-person instruction rather than a matching rule. Option D is too broad and would trigger on unrelated email requests."
+/>
+
 ## Good vs. Bad — Side by Side
+
+<Details title="Four worked examples: discovery, demo prep, RFP, and follow-up">
 
 ### Discovery Call Preparation
 
@@ -106,6 +124,8 @@ description: This skill should be used when the user asks to "write
   next steps and action items after a prospect meeting.
 ```
 
+</Details>
+
 ## How to Identify Your Trigger Phrases
 
 The best trigger phrases come from thinking about what you would actually type. Not what sounds correct — what you'd actually type at 8pm before a 9am call tomorrow.
@@ -136,6 +156,10 @@ For SE workflows, there are four common phrase patterns:
 - "recap what we discussed..."
 - "draft next steps for..."
 
+<Callout type="tip">
+Generate 8–10 candidate phrases before writing your description, then select the 4–5 that represent the most distinct phrasings. You want coverage across different ways of expressing the same intent — not five variations of the same phrase. Redundant phrases waste description space without improving matching.
+</Callout>
+
 When you're writing a description, generate 8–10 phrases first, then pick the 4–5 that represent the most distinct phrasings. You want coverage, not redundancy.
 
 ## Testing Your Triggers
@@ -152,10 +176,26 @@ Writing a description is only half the job. You need to verify it actually fires
 - If you have a follow-up email skill, try "draft a cold outreach email" — this is a different workflow and shouldn't match
 - Try adjacent requests that might accidentally match
 
+<Callout type="warning">
+Watch for three trigger failure modes: Too narrow (exact phrases fire but real-world variations don't — fix by adding more phrases and a broader intent catch), too broad (the skill fires on unrelated requests — fix by making phrases more specific), and duplicate coverage (two skills with overlapping descriptions where Claude picks the wrong one — fix by making each skill's scope distinct and non-overlapping).
+</Callout>
+
 The failure modes to watch for:
 - **Too narrow** — Your exact phrases trigger correctly, but real-world variations don't. Fix by adding more phrases and a broader intent catch at the end.
 - **Too broad** — The description matches things it shouldn't, and the skill loads when it's not relevant. Fix by making trigger phrases more specific and removing vague catch-all language.
 - **Duplicate coverage** — Two skills have overlapping descriptions, and Claude picks the wrong one. Fix by making each skill's scope distinct and non-overlapping.
+
+<KnowledgeCheck
+  question="You test your discovery skill and find it fires correctly on 'prepare discovery questions' but fails on 'what should I ask in my discovery call tomorrow?' Which failure mode is this, and how do you fix it?"
+  options={[
+    "Too broad — remove the broad intent catch at the end of your description.",
+    "Too narrow — add more distinct phrase variations and a broader intent catch to cover natural language requests.",
+    "Duplicate coverage — check whether another skill is intercepting this phrase instead.",
+    "This is expected behavior — trigger descriptions only match exact phrases."
+  ]}
+  correct={1}
+  explanation="This is the 'too narrow' failure mode. The description only catches the specific phrases listed, but misses natural variations like 'what should I ask.' The fix is to add more phrase variants (e.g., 'what should I ask about', 'help me understand what to cover') and end with a broader intent catch like 'or mentions preparing questions for an upcoming customer call.'"
+/>
 
 ## Exercise
 
@@ -176,3 +216,17 @@ Write the description, then test it against both the phrases that should trigger
 ---
 
 You now have the foundations. You understand what skills are, how they're structured, and how trigger descriptions determine whether they fire. In the next module, we'll move from understanding to building — walking through the six-step process for creating your first skill from scratch.
+
+<KeyTakeaways items={[
+  "The description field is evaluated before any skill content loads — it is a matching rule, not a summary of what the skill does.",
+  "A good trigger description uses third-person format, includes 4–5 specific quoted phrases users would actually type, and ends with a broader intent catch for natural language requests.",
+  "Generate 8–10 candidate phrases before writing, then select the most distinct ones. Coverage across different phrasings matters more than having many variations of the same phrase.",
+  "Test both positively (phrases that should fire) and negatively (adjacent requests that should not fire) to catch the three failure modes: too narrow, too broad, and duplicate coverage."
+]} />
+
+<SelfAssessment items={[
+  "I can explain the three elements of a good trigger description and why each one matters.",
+  "I can distinguish between an effective trigger description and a weak one, and identify specifically what makes each bad example fail.",
+  "I can generate a set of trigger phrases for a new skill by thinking about what users would actually type.",
+  "I can test a trigger description for both false negatives (too narrow) and false positives (too broad) and know how to fix each failure mode."
+]} />

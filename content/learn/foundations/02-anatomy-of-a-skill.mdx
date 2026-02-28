@@ -22,7 +22,8 @@ description: This skill should be used when the user asks to "prepare
   discovery questions", "plan a technical discovery call", "generate
   questions for a prospect meeting", or mentions understanding
   customer requirements and technical needs.
-version: 0.1.0
+metadata:
+  version: 0.1.0
 ---
 ```
 
@@ -34,7 +35,27 @@ A perfect skill body with a bad description does nothing. The user asks for help
 
 We'll cover trigger descriptions in detail in the next lesson. For now, know that it must use third-person format ("This skill should be used when...") and include specific phrases users would actually type.
 
-**`version`** — Optional but recommended. Use semantic versioning (`0.1.0`, `1.0.0`). When you update a skill's core workflow, bump the version so you can track what changed.
+<Callout type="key">
+The `description` field is evaluated before the skill body ever loads. A skill with a perfect workflow but a weak description will never fire. Write the description first, and write it for the phrases your users actually type.
+</Callout>
+
+**`metadata.version`** — Optional but recommended for version tracking. Use semantic versioning (`0.1.0`, `1.0.0`). Note that `version` is not a standard frontmatter field — version information belongs nested under `metadata` (e.g., `metadata.version`). When you update a skill's core workflow, bump the version so you can track what changed.
+
+<Callout type="warning">
+Do not put `version` at the top level of the frontmatter. It belongs nested under `metadata` as `metadata.version`. Top-level `version` is not a recognized field and may cause parsing issues depending on your tooling.
+</Callout>
+
+<KnowledgeCheck
+  question="Which frontmatter field does Claude evaluate first when deciding whether to load a skill?"
+  options={[
+    "name — the skill identifier",
+    "description — the trigger logic",
+    "metadata.version — the version number",
+    "The entire frontmatter block is evaluated simultaneously"
+  ]}
+  correct={1}
+  explanation="Claude reads the description field to decide whether a skill is relevant to the current request. If the description doesn't match, the skill body never loads — making the description the single most consequential field in the entire file."
+/>
 
 ## The Body
 
@@ -59,7 +80,11 @@ A typical SKILL.md body covers four areas:
 
 **Resource references** — Pointers to files in `references/`, `scripts/`, and `assets/`. Tell Claude what's available and when to use it.
 
-Target 1,500–2,000 words for the body. Less than that, and you're probably missing important workflow detail. More than that, and you're crowding the context window and making the skill harder to maintain.
+<Callout type="tip">
+Target under 500 lines and under 5,000 tokens for the skill body. If your body is growing beyond this, move detailed reference material into the `references/` directory instead of keeping it inline. The body should be a fast-loading workflow guide, not a documentation dump.
+</Callout>
+
+Target under 500 lines (the recommended ceiling) and under 5,000 tokens for the body. More than that, and you're crowding the context window and making the skill harder to maintain.
 
 ## Explore the Anatomy
 
@@ -107,6 +132,18 @@ Good candidates for `assets/`:
 
 Assets give output consistency. Instead of Claude generating a format from scratch each time, it starts from a known template that matches your team's standards.
 
+<KnowledgeCheck
+  question="You have a 600-question discovery question bank. Where does it belong in a skill directory?"
+  options={[
+    "Inline in the SKILL.md body, so Claude always has it available",
+    "In the `references/` directory, so Claude can pull it when needed",
+    "In the `assets/` directory, as a template Claude fills in",
+    "In the `scripts/` directory, so it can be formatted consistently"
+  ]}
+  correct={1}
+  explanation="Large reference documents like question banks belong in `references/`. They're too long for the SKILL.md body (which should stay under 5,000 tokens), and they're not templates or scripts — they're information Claude reads on demand. Claude pulls from `references/` when the task requires it, keeping the body lean."
+/>
+
 ## Writing Style Rules
 
 The rules for SKILL.md body content:
@@ -116,6 +153,12 @@ The rules for SKILL.md body content:
 **Third-person description.** The frontmatter description uses third-person ("This skill should be used when..."). The body is imperative but may reference "the user" or "the prospect" rather than "you."
 
 **Objective language.** Don't write "create a compelling email." Write "create an email that summarizes the key technical requirements discussed and confirms next steps." Specific and verifiable beats vague and aspirational.
+
+<Callout type="example">
+The difference between weak and strong skill instructions comes down to specificity. Weak: "Generate thoughtful discovery questions tailored to the prospect." Strong: "Generate 15–20 discovery questions organized into four categories: current state, technical requirements, decision criteria, and competitive landscape." The strong version tells Claude exactly what to produce — count, structure, and categories.
+</Callout>
+
+<Details title="Writing style: bad vs. good examples">
 
 **Here are clear examples:**
 
@@ -148,6 +191,8 @@ Generate 15–20 discovery questions organized into four categories:
 
 The difference in both cases: the "good" version tells Claude exactly what to produce. The "bad" version leaves it to inference.
 
+</Details>
+
 ## Putting It Together
 
 A well-structured SKILL.md file is short, specific, and complete. It answers three questions:
@@ -157,3 +202,18 @@ A well-structured SKILL.md file is short, specific, and complete. It answers thr
 3. **What resources are available?** (references to the directories)
 
 In the next lesson, we'll go deep on trigger descriptions — the single most important thing you'll write in any skill file.
+
+<KeyTakeaways items={[
+  "Every skill lives in its own directory with a single SKILL.md file containing YAML frontmatter and a markdown body.",
+  "The description field is the trigger gate — Claude evaluates it before loading any skill content. A weak description means the skill never fires.",
+  "The skill body must use imperative form (commands, not suggestions) and stay under 500 lines / 5,000 tokens.",
+  "Large reference material, output scripts, and reusable templates belong in the references/, scripts/, and assets/ directories — not inline in the body.",
+  "Version tracking belongs nested under metadata as metadata.version, not as a top-level frontmatter field."
+]} />
+
+<SelfAssessment items={[
+  "I can describe the two parts of a SKILL.md file and explain what each part is for.",
+  "I can explain why the description field is the most important field in a skill and what makes a description effective.",
+  "I can identify which content belongs in the skill body vs. the references/, scripts/, and assets/ directories.",
+  "I can write skill body instructions in imperative form with specific, verifiable outcomes."
+]} />
