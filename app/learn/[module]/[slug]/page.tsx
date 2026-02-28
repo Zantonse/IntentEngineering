@@ -1,7 +1,11 @@
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
 import { notFound } from "next/navigation";
 import { MODULE_META, type ModuleSlug } from "@/lib/constants";
-import { getLesson, getLessonsByModule } from "@/lib/mdx";
+import { getLesson, getLessonsByModule, extractHeadings } from "@/lib/mdx";
 import { LessonNav } from "@/components/LessonNav";
+import { TableOfContents } from "@/components/learn/TableOfContents";
 
 export default async function LessonPage({
   params,
@@ -20,6 +24,12 @@ export default async function LessonPage({
   const currentIndex = allLessons.findIndex((l) => l.slug === slug);
   const prev = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const next = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  // Extract headings for table of contents
+  const rawPath = path.join(process.cwd(), "content", "learn", moduleSlug, `${slug}.mdx`);
+  const rawContent = fs.readFileSync(rawPath, "utf-8");
+  const { content: rawBody } = matter(rawContent);
+  const headings = extractHeadings(rawBody);
 
   return (
     <article>
@@ -40,6 +50,8 @@ export default async function LessonPage({
           {lesson.frontmatter.description}
         </p>
       </div>
+
+      <TableOfContents headings={headings} />
 
       <div className="prose-workshop">
         {lesson.content}

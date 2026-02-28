@@ -3,6 +3,7 @@ import path from "path";
 import matter from "gray-matter";
 import { compileMDX } from "next-mdx-remote/rsc";
 import rehypePrettyCode from "rehype-pretty-code";
+import rehypeSlug from "rehype-slug";
 import React from "react";
 import { SkillAnatomyExplorer } from "@/components/interactive/SkillAnatomyExplorer";
 import { SkillBuilder } from "@/components/interactive/SkillBuilder";
@@ -25,6 +26,33 @@ export interface LessonFrontmatter {
 export interface LessonMeta {
   slug: string;
   frontmatter: LessonFrontmatter;
+}
+
+export interface TocHeading {
+  id: string;
+  text: string;
+  level: 2 | 3;
+}
+
+/**
+ * Extract h2/h3 headings from raw MDX content for table of contents.
+ */
+export function extractHeadings(rawContent: string): TocHeading[] {
+  const headingRegex = /^(#{2,3})\s+(.+)$/gm;
+  const headings: TocHeading[] = [];
+  let match;
+
+  while ((match = headingRegex.exec(rawContent)) !== null) {
+    const level = match[1].length as 2 | 3;
+    const text = match[2].replace(/\*\*(.+?)\*\*/g, "$1").replace(/`(.+?)`/g, "$1");
+    const id = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+    headings.push({ id, text, level });
+  }
+
+  return headings;
 }
 
 /**
@@ -68,6 +96,7 @@ export async function getLesson(moduleSlug: string, lessonSlug: string) {
     options: {
       mdxOptions: {
         rehypePlugins: [
+          rehypeSlug,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           [rehypePrettyCode as any, { theme: "github-dark-default", keepBackground: true }],
         ],
@@ -112,6 +141,7 @@ export async function getReferencePage(slug: string) {
     options: {
       mdxOptions: {
         rehypePlugins: [
+          rehypeSlug,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           [rehypePrettyCode as any, { theme: "github-dark-default", keepBackground: true }],
         ],
