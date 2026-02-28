@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Fuse from "fuse.js";
+import Fuse, { type FuseResult } from "fuse.js";
 
 interface SearchEntry {
   title: string;
@@ -27,7 +27,7 @@ const MODULE_COLORS: Record<string, string> = {
 export function SearchDialog() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Fuse.FuseResult<SearchEntry>[]>([]);
+  const [results, setResults] = useState<FuseResult<SearchEntry>[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [fuse, setFuse] = useState<Fuse<SearchEntry> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
