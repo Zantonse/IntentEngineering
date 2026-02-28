@@ -5,6 +5,12 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import rehypePrettyCode from "rehype-pretty-code";
 import React from "react";
 import { SkillAnatomyExplorer } from "@/components/interactive/SkillAnatomyExplorer";
+import { SkillBuilder } from "@/components/interactive/SkillBuilder";
+import { OrchestrationFlowEditor } from "@/components/interactive/OrchestrationFlowEditor";
+import { IntentArchitectDesigner } from "@/components/interactive/IntentArchitectDesigner";
+import { Callout } from "@/components/learn/Callout";
+import { Details } from "@/components/learn/Details";
+import { KeyTakeaways } from "@/components/learn/KeyTakeaways";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -182,5 +188,11 @@ function getMDXComponents() {
         ...props,
       }),
     SkillAnatomyExplorer,
+    SkillBuilder,
+    OrchestrationFlowEditor,
+    IntentArchitectDesigner,
+    Callout,
+    Details,
+    KeyTakeaways,
   };
 }
