@@ -12,6 +12,9 @@ import { IntentArchitectDesigner } from "@/components/interactive/IntentArchitec
 import { Callout } from "@/components/learn/Callout";
 import { Details } from "@/components/learn/Details";
 import { KeyTakeaways } from "@/components/learn/KeyTakeaways";
+import { GlossaryTerm } from "@/components/learn/GlossaryTerm";
+import { KnowledgeCheck } from "@/components/learn/KnowledgeCheck";
+import { SelfAssessment } from "@/components/learn/SelfAssessment";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -224,5 +227,8 @@ function getMDXComponents() {
     Callout,
     Details,
     KeyTakeaways,
+    GlossaryTerm,
+    KnowledgeCheck,
+    SelfAssessment,
   };
 }
