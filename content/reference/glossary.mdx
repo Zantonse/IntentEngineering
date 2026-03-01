@@ -11,6 +11,16 @@ A spawned subprocess that Claude dispatches to handle a specific task. Agents ru
 
 > **Example:** A `/research` skill might dispatch an agent to search the web for sources while the parent process continues drafting an outline.
 
+### Agent (Specialized)
+
+The configured Claude Code instance that results from combining skills, orchestration, and intent engineering for a specific professional domain. Unlike a general-purpose assistant, a specialized agent has encoded domain workflows, defined goals and constraints, and orchestrated pipelines. An SE agent, for example, has skills for discovery, demo prep, RFP response, and follow-up — making it specialized for sales engineering work rather than broadly capable at any task.
+
+> **Example:** An SE with five skills (discovery-questions, demo-prep, rfp-response, post-call-followup, competitive-analysis) plus a project CLAUDE.md encoding team conventions effectively has a specialized SE agent that can handle compound tasks like "prep for tomorrow's call with Acme" autonomously.
+
+### Arguments ($ARGUMENTS)
+
+The variable that captures user input passed to a skill when invoked. In `/prep-call "Acme Corp"`, the value `Acme Corp` is available as `$ARGUMENTS` throughout the skill.
+
 ### Assets
 
 Files in a skill's `assets/` directory used in output such as templates, logos, and boilerplate. Assets are not loaded into context — they are copied or referenced in output.
@@ -23,7 +33,7 @@ Files in a skill's `assets/` directory used in output such as templates, logos, 
 
 A markdown file containing persistent instructions for Claude. Acts as the "operating system" for intent — defines project context, coding standards, and behavioral rules that apply across every interaction in a project.
 
-> **Example:** A CLAUDE.md might specify "Always use TypeScript strict mode" or "Never commit directly to main — always create a branch."
+> **Example:** A CLAUDE.md might specify "Always reference the prospect's stated pain points in follow-up emails" or "Use the capability classification (Full/Partial/Planned/Gap) when assessing product fit."
 
 ### Command
 
@@ -31,17 +41,32 @@ A user-invoked action (e.g., `/commit`). Unlike skills, which Claude loads autom
 
 > **Example:** `/deploy`, `/review-pr`, and `/new-component` are all commands that execute a predefined workflow on demand.
 
+### Context Fork
+
+A SKILL.md configuration (`context: fork`) that runs the skill in an isolated subagent context. The skill's execution happens in a separate context window, and only a summary returns to the main conversation. Used for research-heavy skills where verbose intermediate output would bloat the main context.
+
+## D
+
+### disable-model-invocation
+
+A SKILL.md frontmatter flag (`disable-model-invocation: true`) that prevents Claude from automatically triggering the skill based on the description. When set, only explicit user invocation (typing the skill name) will activate it. Recommended for any skill that produces customer-facing output.
+
+### Dynamic Context Injection
+
+The `!`command`` syntax in SKILL.md files that runs shell commands before the skill content is sent to Claude. The command output replaces the placeholder, enabling skills to pull live data from CRM, calendars, APIs, and other systems at execution time.
+
+> **Example:** `!`sf data query --query "SELECT Name FROM Opportunity WHERE Account.Name = '$ARGUMENTS'"`` runs a Salesforce CLI query and injects the results into the skill content before Claude processes it.
+
 ## F
 
 ### Frontmatter
 
-YAML metadata at the top of a SKILL.md file, enclosed in `---` delimiters. Contains `name`, `description`, and optionally `version`. The frontmatter is always loaded into context — the body is loaded only when the skill is triggered.
+YAML metadata at the top of a SKILL.md file, enclosed in `---` delimiters. Contains `name` and `description` (required), plus optional fields like `disable-model-invocation`, `allowed-tools`, `model`, `context`, `agent`, and `hooks`. The frontmatter is always loaded into context — the body is loaded only when the skill is triggered.
 
 ```yaml
 ---
 name: "blog-post"
 description: "Writes and publishes blog posts. Triggered when user asks to write, draft, or publish a blog post."
-version: "1.0.0"
 ---
 ```
 

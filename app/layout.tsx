@@ -6,7 +6,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "The Intent Workshop",
-  description: "From prompts to systems. A guide for sales engineers building AI-powered workflows.",
+  description: "Build a specialized SE agent with Claude Code. Skills give it domain expertise. Orchestration makes it autonomous. Intent engineering makes it accountable.",
 };
 
 export default function RootLayout({

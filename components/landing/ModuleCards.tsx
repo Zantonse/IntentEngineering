@@ -11,8 +11,8 @@ export function ModuleCards() {
         The Learning Path
       </h2>
       <p className="text-text-secondary mb-8">
-        Four modules that take you from understanding skills to designing
-        complete intent systems.
+        Four modules that take you from first principles to a deployed SE
+        agent — specialized, autonomous, and built the way you work.
       </p>
 
       <div className="grid md:grid-cols-2 gap-4">

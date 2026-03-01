@@ -6,6 +6,14 @@ const REFERENCE_META: Record<string, { title: string; description: string }> = {
     title: "Glossary",
     description: "Key terms and definitions for intent engineering.",
   },
+  "se-skill-library": {
+    title: "SE Skill Library Reference",
+    description: "Complete taxonomy of SE skills — 15 skills across 4 tiers with design patterns, naming conventions, and directory structures.",
+  },
+  "mcp-integration-guide": {
+    title: "MCP Integration Guide",
+    description: "Connecting your SE agent to real tools — CRM, email, call recording, knowledge bases, and integration platforms.",
+  },
 };
 
 export default function ReferencePage() {

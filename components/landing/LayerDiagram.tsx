@@ -15,7 +15,7 @@ const LAYERS = [
   {
     id: "skills",
     label: "Skill Engineering",
-    description: "Packaging domain knowledge + workflows",
+    description: "Your agent's domain expertise",
     color: "var(--color-mod-foundations)",
     href: "/learn/foundations",
     width: "55%",
@@ -23,7 +23,7 @@ const LAYERS = [
   {
     id: "orchestration",
     label: "Orchestration",
-    description: "Composing skills with routing and state",
+    description: "Your agent's autonomy and coordination",
     color: "var(--color-mod-orchestration)",
     href: "/learn/orchestration",
     width: "70%",
@@ -31,7 +31,7 @@ const LAYERS = [
   {
     id: "intent",
     label: "Intent Engineering",
-    description: "Full system design — the complete picture",
+    description: "Your deployed SE agent — accountable and production-ready",
     color: "var(--color-mod-intent)",
     href: "/learn/intent-engineering",
     width: "85%",

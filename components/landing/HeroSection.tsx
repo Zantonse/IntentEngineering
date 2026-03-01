@@ -7,14 +7,15 @@ export function HeroSection() {
       <div className="max-w-6xl mx-auto px-8 py-20 grid lg:grid-cols-2 gap-16 items-center">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-text-primary leading-tight">
-            From prompts
+            Turn Claude Code
             <br />
-            <span className="text-electric-500">to systems.</span>
+            <span className="text-electric-500">into your SE agent.</span>
           </h1>
           <p className="text-lg text-text-secondary mt-6 max-w-lg">
-            A hands-on guide for sales engineers building AI-powered workflows.
-            Learn to create skills, compose orchestrations, and design complete
-            intent engineering systems.
+            Skills give your agent domain expertise. Orchestration makes it
+            autonomous. Intent engineering makes it accountable. A hands-on
+            guide for sales engineers building specialized AI agents with
+            Claude Code.
           </p>
           <div className="flex gap-4 mt-8">
             <Link

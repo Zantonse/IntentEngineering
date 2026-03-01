@@ -11,7 +11,9 @@ export default function LearnPage() {
         Learning Path
       </h1>
       <p className="text-text-secondary mb-8 text-lg">
-        From prompts to systems. Master intent engineering one module at a time.
+        Four modules from first principles to a deployed SE agent. Skills
+        give it expertise. Orchestration gives it autonomy. Intent engineering
+        makes it yours.
       </p>
 
       <div className="grid gap-4">

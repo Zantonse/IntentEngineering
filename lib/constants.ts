@@ -1,8 +1,8 @@
 export const MODULE_META = {
   foundations: {
     title: "Foundations",
-    subtitle: "What Are Skills?",
-    description: "Understand what skills are, how they work, and why they exist.",
+    subtitle: "Your Agent's Building Blocks",
+    description: "Skills are the domain expertise layer of your SE agent — what it knows, when to apply it, and how it works.",
     color: "var(--color-mod-foundations)",
     colorClass: "text-electric-500",
     bgClass: "bg-electric-500",
@@ -12,8 +12,8 @@ export const MODULE_META = {
   },
   "building-skills": {
     title: "Building Skills",
-    subtitle: "From Idea to Skill",
-    description: "Learn the 6-step process for creating effective skills.",
+    subtitle: "Giving Your Agent SE Expertise",
+    description: "Build the skills that turn Claude Code into a specialized SE agent — discovery, demo prep, RFP response, and follow-up.",
     color: "var(--color-mod-building)",
     colorClass: "text-mod-building",
     bgClass: "bg-mod-building",
@@ -23,8 +23,8 @@ export const MODULE_META = {
   },
   orchestration: {
     title: "Orchestration",
-    subtitle: "Composing Skills Into Workflows",
-    description: "Chain skills together with routing, handoffs, and state management.",
+    subtitle: "Making Your Agent Autonomous",
+    description: "Chain skills into multi-step workflows so your agent acts on its own — routing, handoffs, and state management.",
     color: "var(--color-mod-orchestration)",
     colorClass: "text-amber-500",
     bgClass: "bg-amber-500",
@@ -34,14 +34,25 @@ export const MODULE_META = {
   },
   "intent-engineering": {
     title: "Intent Engineering",
-    subtitle: "Designing the Full System",
-    description: "Design complete intent systems with goals, constraints, memory, and evaluation.",
+    subtitle: "Deploying Your SE Agent",
+    description: "Design the full system — goals, constraints, memory, and evaluation — that makes your SE agent accountable and production-ready.",
     color: "var(--color-mod-intent)",
     colorClass: "text-mod-intent",
     bgClass: "bg-mod-intent",
     icon: "compass",
     slug: "intent-engineering",
     order: 4,
+  },
+  "building-your-agent": {
+    title: "Building Your SE Agent",
+    subtitle: "From Skills to a Working Agent",
+    description: "Put it all together — design your skill library, connect to real tools via MCP, build account context systems, and deploy a production SE agent.",
+    color: "var(--color-mod-practice)",
+    colorClass: "text-mod-practice",
+    bgClass: "bg-mod-practice",
+    icon: "rocket",
+    slug: "building-your-agent",
+    order: 5,
   },
 } as const;
 
