@@ -102,7 +102,7 @@ Skills aren't write-once artifacts. The feedback loop that makes them production
 Keep a simple friction log — three columns: What happened, Why it happened, What to change. After a week of use, group friction points by type (trigger misses, process gaps, output quality issues) and address each group in a version bump.
 
 <Callout type="tip">
-Version bumps create a history of what changed and when. Use semantic versioning: `0.1.0` to `0.2.0` for trigger changes, `0.1.0` to `0.1.1` for minor process tweaks, `0.x` to `1.0.0` when the skill is stable enough for team-wide use. When something breaks, the version history is how you trace what changed.
+Version bumps create a history of what changed and when. A useful convention is to use semantic versioning: `0.1.0` to `0.2.0` for trigger changes, `0.1.0` to `0.1.1` for minor process tweaks, `0.x` to `1.0.0` when the skill is stable enough for team-wide use. When something breaks, the version history is how you trace what changed.
 </Callout>
 
 **Comparing versions.** When you bump from `0.1.0` to `0.2.0`, test both versions on the same three inputs. Compare outputs side-by-side. If the new version isn't clearly better on at least two of three inputs, the change isn't an improvement — revert.
@@ -111,7 +111,7 @@ Version bumps create a history of what changed and when. Use semantic versioning
 
 Sometimes a skill grows too broad. Signs you need to split it:
 
-- The SKILL.md body exceeds 2,000 words
+- The SKILL.md body approaches the 500-line ceiling
 - The process has meaningful branches ("if X, do this; if Y, do that")
 - You find yourself skipping whole sections for certain use cases
 
@@ -119,7 +119,7 @@ Split by creating two focused skills from one broad one. "customer-communication
 
 Signs you should expand instead of split:
 
-- The skill is under 800 words and output quality is still poor — remember, the target is 1,500–2,000 words. Expand first, then split only if the expanded version exceeds 2,000 words or develops branches.
+- The skill is short and output quality is still poor — the skill may need more content. Expand the process steps before splitting; only split if the expanded version approaches the 500-line ceiling or develops meaningful branches.
 - Users need to run two skills back-to-back that logically belong together
 - The proposed split would produce skills with 90% overlapping content
 
@@ -142,7 +142,7 @@ You now have a framework for building individual skills and making them reliable
 />
 
 <KnowledgeCheck
-  question="Your SKILL.md body has grown to 2,500 words and the process now has three meaningful branches for different deal sizes. What should you do?"
+  question="Your SKILL.md body is approaching the 500-line ceiling and the process now has three meaningful branches for different deal sizes. What should you do?"
   options={[
     "Keep expanding until you reach 5,000 tokens — there is still budget available",
     "Delete the branches and handle only the most common deal size",
@@ -150,7 +150,7 @@ You now have a framework for building individual skills and making them reliable
     "Move the entire process into a reference file and keep SKILL.md as a stub"
   ]}
   correct={2}
-  explanation="Two of the three split indicators are present: the body exceeds 2,000 words, and the process has meaningful branches. The right move is to split into focused skills — each with its own trigger, process, and reference material. Focused skills are easier to test, easier to trust, and compose cleanly into larger workflows."
+  explanation="Two of the three split indicators are present: the body is approaching the 500-line ceiling, and the process has meaningful branches. The right move is to split into focused skills — each with its own trigger, process, and reference material. Focused skills are easier to test, easier to trust, and compose cleanly into larger workflows."
 />
 
 <KeyTakeaways
@@ -159,7 +159,7 @@ You now have a framework for building individual skills and making them reliable
     "Test on hard cases: diverse industries, sparse CRM data, edge-case deal types. A skill that only works on clean inputs isn't ready.",
     "Common failures map to predictable causes: generic output means vague process steps; inconsistent output means ambiguous steps; scope creep means missing boundary statements.",
     "The iteration loop (use, log friction, update, retest) is what turns a draft skill into a reliable one — use semantic versioning to track changes.",
-    "Split a skill when the body exceeds 2,000 words or develops meaningful branches; expand before splitting if the skill is still under 800 words."
+    "Split a skill when the body approaches the 500-line ceiling or develops meaningful branches; expand the process steps before splitting if the skill is still short and output quality is poor."
   ]}
 />
 

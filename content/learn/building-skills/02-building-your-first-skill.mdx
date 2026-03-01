@@ -109,7 +109,7 @@ For the discovery questions skill:
 
 - **`references/question-bank.md`** — Your team's full library of 500+ categorized questions. Too long to include in SKILL.md directly, but Claude can pull specific sections when needed.
 - **`references/industries.md`** — Industry-specific question templates for fintech, healthcare, manufacturing, and other common verticals. Loads when the prospect's industry is known.
-- **`scripts/format-questions.sh`** — Converts generated questions into the standardized call prep format your team uses. Deterministic output, consistent every time.
+- **`scripts/format-questions.sh`** — Converts generated questions into the standardized call prep format your team uses. Deterministic output, consistent every time. Note: for Claude to execute scripts, the skill's frontmatter needs `allowed-tools` to include the Bash tool.
 - **`assets/call-prep-template.md`** — The team's standard call prep document structure. Claude fills this in rather than inventing a format from scratch.
 
 The resulting directory structure:

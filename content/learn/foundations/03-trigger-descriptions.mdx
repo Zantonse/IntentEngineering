@@ -21,7 +21,7 @@ The description field is a matching rule, not a summary. Claude compares it agai
 
 A good trigger description has three elements:
 
-**Third-person format.** Always start with "This skill should be used when the user..." This framing tells Claude how to interpret the description — as a matching rule, not as the skill content itself.
+**Third-person format.** Always start with "This skill should be used when the user..." This convention is widely used because it appears to help Claude distinguish the description from the skill content itself — treating it as a trigger condition rather than an instruction to execute.
 
 **Specific trigger phrases in quotes.** Include the actual phrases users would type, quoted so Claude treats them as literal matches. "prepare discovery questions" is better than *requests discovery questions* because it reflects how people actually write.
 
@@ -157,10 +157,10 @@ For SE workflows, there are four common phrase patterns:
 - "draft next steps for..."
 
 <Callout type="tip">
-Generate 8–10 candidate phrases before writing your description, then select the 4–5 that represent the most distinct phrasings. You want coverage across different ways of expressing the same intent — not five variations of the same phrase. Redundant phrases waste description space without improving matching.
+As a practical rule of thumb, generate 8–10 candidate phrases before writing your description, then select the 4–5 that represent the most distinct phrasings. You want coverage across different ways of expressing the same intent — not five variations of the same phrase. Redundant phrases waste description space without improving matching.
 </Callout>
 
-When you're writing a description, generate 8–10 phrases first, then pick the 4–5 that represent the most distinct phrasings. You want coverage, not redundancy.
+As a practical rule of thumb, when you're writing a description, generate 8–10 phrases first, then pick the 4–5 that represent the most distinct phrasings. You want coverage, not redundancy.
 
 ## Testing Your Triggers
 

@@ -76,10 +76,10 @@ A typical SKILL.md body covers four areas:
 **Resource references** — Pointers to files in `references/`, `scripts/`, and `assets/`. Tell Claude what's available and when to use it.
 
 <Callout type="tip">
-Target under 500 lines and under 5,000 tokens for the skill body. If your body is growing beyond this, move detailed reference material into the `references/` directory instead of keeping it inline. The body should be a fast-loading workflow guide, not a documentation dump.
+Target under 500 lines for the skill body (the documented ceiling). If your body is growing beyond this, move detailed reference material into the `references/` directory instead of keeping it inline. The body should be a fast-loading workflow guide, not a documentation dump.
 </Callout>
 
-Target under 500 lines (the recommended ceiling) and under 5,000 tokens for the body. More than that, and you're crowding the context window and making the skill harder to maintain.
+Target under 500 lines (the documented ceiling) for the body. More than that, and you're crowding the context window and making the skill harder to maintain.
 
 ## Explore the Anatomy
 
@@ -136,7 +136,7 @@ Assets give output consistency. Instead of Claude generating a format from scrat
     "In the `scripts/` directory, so it can be formatted consistently"
   ]}
   correct={1}
-  explanation="Large reference documents like question banks belong in `references/`. They're too long for the SKILL.md body (which should stay under 5,000 tokens), and they're not templates or scripts — they're information Claude reads on demand. Claude pulls from `references/` when the task requires it, keeping the body lean."
+  explanation="Large reference documents like question banks belong in `references/`. They're too long for the SKILL.md body (which should stay under 500 lines), and they're not templates or scripts — they're information Claude reads on demand. Claude pulls from `references/` when the task requires it, keeping the body lean."
 />
 
 ## Writing Style Rules

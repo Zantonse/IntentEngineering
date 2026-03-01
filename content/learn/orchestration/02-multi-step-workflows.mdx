@@ -21,7 +21,7 @@ Orchestration requires decomposing a broad skill into focused, single-purpose sk
 
 In Module 2, `post-call-followup` was a single skill. That skill handled everything in one pass: extracting discussion points, identifying action items, drafting the follow-up email, and preparing CRM notes. It worked — but it was doing four distinct jobs inside a single SKILL.md. For orchestration, we decompose it into four focused skills, each doing one thing well:
 
-- `meeting-transcriber` — converts raw audio or notes into structured text
+- `meeting-transcriber` — converts meeting notes or a transcript into structured text
 - `action-item-extractor` — pulls commitments and owners from the transcript
 - `follow-up-composer` — drafts the customer-facing email from the action items
 - `crm-updater` — formats and writes notes to the CRM from the email and action items
@@ -195,7 +195,7 @@ The critical concept in multi-step workflows is **state passing** — how data f
 Think of input and output contracts as the API between skills. A skill that produces a precisely defined output shape — "a structured list of action items, each with an owner field, a deadline field, and a description field" — connects cleanly to any downstream skill expecting that shape. Vague contracts produce unreliable pipelines.
 </Callout>
 
-In Claude Code, there are three practical strategies for managing state between steps:
+Three practical approaches for managing state between steps are:
 
 **Conversation context** — The most common approach. Each skill's output lands in the conversation history, and the next skill can reference it directly. This works well for workflows that complete within a single session.
 

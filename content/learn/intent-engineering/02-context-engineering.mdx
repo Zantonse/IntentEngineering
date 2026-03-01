@@ -95,7 +95,7 @@ The "lost in the middle" problem is the most documented: information placed in t
 Distractors compound the degradation. Topically related but incorrect information — the kind you might inadvertently include when you load a full document instead of an excerpt — does not just add noise. It actively pulls Claude toward wrong answers. The model finds plausible patterns in the wrong material and uses them.
 
 <Callout type="warning">
-Claude specifically tends to abstain rather than hallucinate when context quality degrades. This means over-stuffing context can cause your system to produce nothing rather than something wrong. A skill that stops responding mid-session because context got too noisy looks like Claude being unhelpful — and the root cause is hard to trace without understanding context rot.
+In practice, degraded context tends to produce less reliable output — LLMs may tend to produce less useful output either through abstention or lower-quality responses when context quality degrades. This means over-stuffing context can cause your system to produce nothing useful rather than something clearly wrong. A skill that stops responding mid-session because context got too noisy looks like Claude being unhelpful — and the root cause is hard to trace without understanding context rot.
 </Callout>
 
 Practical guidelines: place critical information early in context and repeat key constraints late. Avoid loading entire documents when excerpts cover what you need. When you find a skill underperforming on longer sessions, inspect the context, not the prompt.
@@ -104,7 +104,7 @@ Practical guidelines: place critical information early in context and repeat key
 
 Look at your existing skills and orchestration workflows through the context engineering lens.
 
-Are your SKILL.md files lean enough? The target is 1,500-2,000 words — comprehensive but bounded. Everything else belongs in `references/`, loaded on demand. A SKILL.md that runs to 5,000 words is not thorough; it is a context problem waiting to happen.
+Are your SKILL.md files lean enough? Keep skill bodies well under the 500-line ceiling — comprehensive but bounded. Everything else belongs in `references/`, loaded on demand. A SKILL.md that runs to 5,000 words is not thorough; it is a context problem waiting to happen.
 
 Are your orchestration steps using subagents where isolation would help? If you have a workflow where three independent analyses run in sequence, each building context that the next step has to filter through, you have a parallel fan-out candidate with isolated context per branch.
 
@@ -123,7 +123,7 @@ The next lesson covers the architectural layers above context: goals, constraint
     "Write — save the skill output to a file before it enters context"
   ]}
   correct={2}
-  explanation="A bloated SKILL.md is a Select problem. Static product documentation belongs in references/ directories that load on demand when a workflow needs them — not embedded in the skill file that loads every time the skill triggers. The target SKILL.md size is 1,500-2,000 words. Everything else belongs in references/."
+  explanation="A bloated SKILL.md is a Select problem. Static product documentation belongs in references/ directories that load on demand when a workflow needs them — not embedded in the skill file that loads every time the skill triggers. Keep skill bodies well under the 500-line ceiling. Everything else belongs in references/."
 />
 
 <KnowledgeCheck
@@ -141,7 +141,7 @@ The next lesson covers the architectural layers above context: goals, constraint
 <KeyTakeaways items={[
   "The context window is a finite resource with diminishing returns — more context is not automatically better.",
   "The four strategies are Write (save outside context), Select (pull just-in-time), Compress (summarize when approaching limits), and Isolate (subagents with fresh context per task).",
-  "Context rot is the performance degradation that happens as context grows — Claude tends to abstain rather than hallucinate, making the failure mode invisible.",
+  "Context rot is the performance degradation that happens as context grows — degraded context tends to produce less reliable output, through abstention or lower-quality responses, making the failure mode hard to diagnose.",
   "The CLAUDE.md hierarchy is itself an implementation of these four strategies — each layer uses a different approach to control what enters context and when.",
   "When a skill underperforms on longer sessions, inspect the context first, not the prompt."
 ]} />
@@ -149,6 +149,6 @@ The next lesson covers the architectural layers above context: goals, constraint
 <SelfAssessment items={[
   "I can identify which of the four context engineering strategies (Write, Select, Compress, Isolate) applies to a given workflow problem.",
   "I can explain why a SKILL.md that runs to 5,000 words is a context problem, not a thoroughness feature.",
-  "I understand what context rot is and why Claude's failure mode (abstaining rather than hallucinating) makes it hard to diagnose.",
+  "I understand what context rot is and why its failure modes (abstention or lower-quality output) can make it hard to diagnose.",
   "I can describe how the CLAUDE.md hierarchy implements context engineering principles across its different layers."
 ]} />

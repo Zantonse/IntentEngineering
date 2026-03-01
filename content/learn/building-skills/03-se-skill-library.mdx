@@ -58,7 +58,7 @@ demo-prep/
     └── leave-behind-template.md
 ```
 
-The `references/` folder holds stable, reusable knowledge: what the product can do, proven demo scenarios, and common objection responses. These are things you maintain once and pull from repeatedly. The `assets/` folder holds output templates — documents that get generated fresh for each prospect. The script in `scripts/` handles the deterministic setup work that would otherwise be manual and error-prone.
+The `references/` folder holds stable, reusable knowledge: what the product can do, proven demo scenarios, and common objection responses. These are things you maintain once and pull from repeatedly. The `assets/` folder holds output templates — documents that get generated fresh for each prospect. The script in `scripts/` handles the deterministic setup work that would otherwise be manual and error-prone. Note: for Claude to execute scripts, the skill's frontmatter needs `allowed-tools` to include the Bash tool.
 
 **Specificity spectrum:** Demo-prep sits at medium freedom. The process is consistent, but the flow varies by prospect — what to lead with, how long to spend on each capability, which objections to pre-empt. The skill guides without prescribing.
 

@@ -5,7 +5,7 @@ order: 4
 module: "intent-engineering"
 ---
 
-Research on AI agent deployment shows that only 11% of organizations have reached production scale. That's not a model problem. The models are capable enough. It's a design problem — specifically, an evaluation problem. The teams in the top 15% share a key practice: they define success criteria before development begins. Everyone else builds something, ships it, and hopes "it seems to work" is good enough. It isn't.
+According to Deloitte's 2025 Emerging Technology Trends survey, only 11% of organizations have agents in production. That's not a model problem. The models are capable enough. It's a design problem — specifically, an evaluation problem. Galileo's State of Eval Engineering Report found that the teams in the top 15% share a key practice: they define success criteria before development begins. Everyone else builds something, ships it, and hopes "it seems to work" is good enough. It isn't.
 
 <Callout type="key">
 Evaluations are not tests you run after you build. They are specifications that shape what you build in the first place. If you cannot describe what "working correctly" looks like for a skill before you write the first line of SKILL.md, you don't understand the problem well enough to solve it.
@@ -53,7 +53,7 @@ Single-step testing builds confidence in components. System testing builds confi
 
 ## The CLEAR Framework
 
-A practical rubric for evaluating SE skill systems before and after deployment:
+The CLEAR framework, proposed by Mehta (2025) in "Beyond Accuracy: A Multi-Dimensional Framework for Evaluating Enterprise Agentic AI Systems" (arXiv:2511.14136), provides a practical rubric for evaluating SE skill systems before and after deployment:
 
 **Cost** — What does a typical invocation cost in tokens and API calls? Is that proportional to the value delivered? A skill that costs 15,000 tokens to draft five discovery questions is not cost-proportionate. A skill that costs 80,000 tokens to generate a complete RFP response package might be.
 

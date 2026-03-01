@@ -40,7 +40,7 @@ description: This skill should be used when the user asks to
 Include three to five representative phrases. Pull them from your own Slack messages, calendar invites, or the way you describe tasks to yourself. If you would type "help me prep for my discovery call with Acme," that exact phrasing should appear somewhere in your trigger.
 
 <Callout type="warning">
-The description field has a budget of ~100 tokens and sits in every conversation — it's an always-on context cost, unless `disable-model-invocation: true` is set, which removes the description from context entirely. Every enabled skill pays this cost whether it triggers or not. Make every word count.
+The description field has a budget of roughly 100 tokens (an estimate — actual cost depends on phrasing and model tokenization) and sits in every conversation — it's an always-on context cost, unless `disable-model-invocation: true` is set, which removes the description from context entirely. Every enabled skill pays this cost whether it triggers or not. Make every word count.
 </Callout>
 
 ### 3. Document the Process
@@ -71,7 +71,7 @@ Keeping this material out of SKILL.md serves a practical purpose. Claude has a c
 
 With your process documented and your resources inventoried, you are ready to assemble the **SKILL.md file**. The frontmatter captures the metadata Claude uses for routing and display. The body is the skill itself: context, instructions, process steps, and output format.
 
-Target under 500 lines (the recommended ceiling) and under 5,000 tokens for the body. These limits reflect the context window budget a skill should consume — enough to give Claude complete instructions without crowding out the conversation itself. If your skill exceeds these limits, you have material that should move into reference files.
+Target under 500 lines (the documented ceiling) for the body. This limit reflects the context window budget a skill should consume — enough to give Claude complete instructions without crowding out the conversation itself. If your skill exceeds this limit, you have material that should move into reference files.
 
 Write the output format section last. After you have documented the process, it is usually obvious what the final deliverable should look like. Specify structure, length, and tone. If the skill produces something the user will send to a customer, say so explicitly — and add `disable-model-invocation: true` to the frontmatter. This flag prevents the skill from auto-triggering based on description matching; it only runs when explicitly invoked by name, which is the right behavior for any output that goes directly to a customer.
 

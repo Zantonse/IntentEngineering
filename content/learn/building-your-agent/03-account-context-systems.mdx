@@ -83,13 +83,13 @@ The hierarchy is load order, not replacement. All three levels are active simult
 
 ## Scaling Across Accounts
 
-A senior SE covers 30 to 80 active accounts. You cannot manually curate 80 context files and keep them current. The system has to do most of the work.
+A senior SE typically covers 30 to 80 active accounts. You cannot manually curate 80 context files and keep them current. The system has to do most of the work.
 
 Three patterns that make this tractable:
 
 **Lazy initialization.** Create context files automatically when a deal enters Technical Evaluation — the stage where context starts to matter for your agent. Pull the CRM fields you need (account name, industry, employee count, deal stage, stakeholder list) and populate a template. The file is incomplete at creation, but it is better than nothing and gives your agent a baseline for the first call.
 
-**Incremental enrichment.** After each call prep session or post-call debrief, your agent proposes additions to the context file: new stakeholder observations, tech stack details surfaced in the call, updated open items. You review a diff and confirm or edit. The cost of maintaining a current context file drops from 20 minutes of manual CRM updates to 90 seconds of reviewing agent proposals.
+**Incremental enrichment.** After each call prep session or post-call debrief, your agent proposes additions to the context file: new stakeholder observations, tech stack details surfaced in the call, updated open items. You review a diff and confirm or edit. In practice, the cost of maintaining a current context file can drop from roughly 20 minutes of manual CRM updates to under two minutes of reviewing agent proposals.
 
 **Staleness detection.** A 60-day-old tech stack note is probably still accurate. A 60-day-old stakeholder stance is not. Add metadata to your context file that tracks when fields were last updated and flags them for review:
 

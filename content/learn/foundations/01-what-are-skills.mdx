@@ -48,10 +48,10 @@ Here's something important about how Claude manages context: there's a limit to 
 Skills solve this with a three-layer loading model:
 
 **Layer 1 — Metadata (always in context)**
-Every skill has a name and a description. These are always loaded, regardless of what's happening in the conversation. They're short — about 100 tokens per skill — so even if you have 20 skills registered, the metadata overhead is manageable. The description is what tells Claude *when* to load the rest of the skill.
+Every skill has a name and a description. These are always loaded, regardless of what's happening in the conversation. They're short — roughly 100 tokens per skill (an estimate; the exact budget depends on description length) — so even if you have 20 skills registered, the metadata overhead is manageable. The description is what tells Claude *when* to load the rest of the skill.
 
 **Layer 2 — SKILL.md body (loads on trigger)**
-When a skill's description matches the user's request, the full skill body loads. This is the domain knowledge, the workflow, the process steps. You target under 500 lines and under 5,000 tokens here (the recommended ceiling to prevent context bloat) — enough to be comprehensive, not so much that it crowds out everything else.
+When a skill's description matches the user's request, the full skill body loads. This is the domain knowledge, the workflow, the process steps. You target under 500 lines here (the documented ceiling). Aim for conciseness — shorter is better for performance — enough to be comprehensive, not so much that it crowds out everything else.
 
 **Layer 3 — References, scripts, assets (loaded as needed)**
 The detailed stuff — question banks, templates, schemas, executable scripts — lives outside the SKILL.md file. Claude pulls these in when the task specifically requires them. A 5,000-word question library only enters the context window if Claude actually needs specific questions.

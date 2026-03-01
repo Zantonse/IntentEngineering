@@ -59,7 +59,7 @@ The most valuable signal is edit distance — how much did the SE change the out
 
 **Skill revision** is what happens when signal accumulates. Skills with consistently high edit rates get flagged for review. The review process is simple: look at the edit deltas. What did SEs consistently add that the skill missed? What did they consistently remove? What did they rewrite every time? The pattern in those edits is the improvement the skill needs. Add the missing content, remove the consistently-cut content, and revise the process documentation to match what SEs actually do rather than what you thought they did when you wrote the first version.
 
-**Iteration** closes the loop. Revise skills based on signal, bump the version in the manifest, and redistribute. The best SE teams review skill quality once a quarter — not continuously, which creates churn, and not annually, which means skills go stale. Quarterly is enough cadence to improve systematically without destabilizing the workflow.
+**Iteration** closes the loop. Revise skills based on signal, bump the version in the manifest, and redistribute. A practical cadence is reviewing skill quality once a quarter — not continuously, which creates churn, and not annually, which means skills go stale. Quarterly is enough cadence to improve systematically without destabilizing the workflow.
 
 <Callout type="tip">
 The most actionable short-term signal in your dataset is a skill with initial usage that drops sharply after the first week. That means an SE tried it, found it inadequate, and stopped. That is not failure — it is a precise diagnostic telling you exactly which skill needs attention and roughly when the SE gave up on it.
@@ -69,13 +69,13 @@ The most actionable short-term signal in your dataset is a skill with initial us
 
 Three measurement tiers, in increasing order of importance and increasing order of difficulty.
 
-**Time savings** are the easiest to measure and the right place to start. Baseline first: before deployment, ask your team how many hours per week they spend on call prep, follow-up emails, and RFP responses. Get specific numbers. A vague "it takes forever" is not a baseline you can measure against. After deployment, resurvey monthly for the first quarter. Anecdotally, early adopters report significant time savings — on the order of 40 to 60 percent reduction in prep time within 90 days. That number is credible to leadership, easy to communicate, and gives you a mandate to invest further.
+**Time savings** are the easiest to measure and the right place to start. Baseline first: before deployment, ask your team how many hours per week they spend on call prep, follow-up emails, and RFP responses. Get specific numbers. A vague "it takes forever" is not a baseline you can measure against. After deployment, resurvey monthly for the first quarter. Anecdotally, early adopters report significant time savings — on the order of significant prep time reductions within the first few months. That number is credible to leadership, easy to communicate, and gives you a mandate to invest further.
 
 **Quality metrics** are harder to collect and more important. Two numbers matter most.
 
 Edit rate — the percentage of agent output used without modification — is your primary skill quality indicator. A high edit rate does not mean quality is high; it might mean SEs have stopped trying to improve bad output. A declining edit rate over time, combined with stable or improving deal outcomes, is the signal you want. It means skills are getting more accurate as they learn from feedback.
 
-Win rate on agent-assisted deals versus a control group is the metric that matters to your business, but it matures slowly. You need at least 50 deals per group for statistical significance, and your deal cycle may be long enough that it takes six months to accumulate that sample. Set up the tracking from day one, but do not expect a credible win rate comparison in the first quarter.
+Win rate on agent-assisted deals versus a control group is the metric that matters to your business, but it matures slowly. As a rough rule of thumb, you want at least 50 deals per group for meaningful comparisons, and your deal cycle may be long enough that it takes six months to accumulate that sample. Set up the tracking from day one, but do not expect a credible win rate comparison in the first quarter.
 
 Deal velocity — are agent-assisted deals moving through stages faster — sits between time savings and win rate in both difficulty and importance. Stage-to-stage conversion timing is typically available in your CRM, and it compounds across the funnel: if technical evaluation averages two weeks faster because your agent accelerates POC planning and documentation, that improvement shows up in your overall sales cycle time.
 

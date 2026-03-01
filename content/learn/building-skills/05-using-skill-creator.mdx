@@ -7,7 +7,7 @@ module: "building-skills"
 
 ## Claude Code as the Driver
 
-So far, we've learned the skill creation process conceptually — the 6-step workflow, how to write trigger descriptions, how to structure resources. In practice, you don't do this in a text editor alone. The `skill-creator` skill (available as a Claude Code plugin) — a skill for creating skills — guides you through the entire process interactively.
+So far, we've learned the skill creation process conceptually — the 6-step workflow, how to write trigger descriptions, how to structure resources. In practice, you don't do this in a text editor alone. The `skill-creator` skill (available as a Claude Code skill) — a skill for creating skills — guides you through the entire process interactively.
 
 The `skill-creator` is a **meta-skill**: it encodes the best practices for skill creation into a structured workflow that Claude follows when you ask it to build a skill. Instead of remembering every frontmatter rule and progressive disclosure pattern, you collaborate with Claude Code and it handles the scaffolding, validation, and packaging.
 
@@ -39,7 +39,7 @@ Claude Code will ask follow-up questions: "What functionality should it support?
 
 Claude Code analyzes your examples and identifies what belongs in `scripts/`, `references/`, and `assets/`. It proposes a **resource plan** — you review and adjust. This maps to Step 4 (Identify Resources) from the 6-step process.
 
-For the demo-prep example, Claude might propose: a `references/prospect-research-template.md` for the discovery questions, a `scripts/generate-script.py` for assembling the final document, and an `assets/leave-behind-template.md` for the one-pager. You confirm, refine, or add resources before any files get created.
+For the demo-prep example, Claude might propose: a `references/prospect-research-template.md` for the discovery questions, a `scripts/setup-demo-env.sh` for preparing the demo environment, and an `assets/leave-behind-template.md` for the one-pager. You confirm, refine, or add resources before any files get created.
 
 ### Step 3: Initialize with `init_skill.py`
 
@@ -109,13 +109,13 @@ Before producing a distributable file, the validator runs a series of checks:
 - `SKILL.md` exists at the top level of the skill directory
 - The frontmatter is valid YAML
 - Only allowed property keys are present: `name`, `description`, `license`, `allowed-tools`, `metadata`, `compatibility` (this is the base Agent Skills spec validation — Claude Code supports additional fields beyond what the validator checks, including `disable-model-invocation`, `user-invocable`, `model`, `context`, `agent`, `hooks`, and `argument-hint`)
-- `name` is kebab-case (lowercase letters and hyphens only), maximum 64 characters, no leading or trailing hyphens, no double hyphens
+- `name` is kebab-case (lowercase letters, numbers, and hyphens only), maximum 64 characters, no leading or trailing hyphens, no double hyphens
 - `description` is present and under 1,024 characters, with no angle brackets
 
 If validation fails, Claude Code reports the exact errors and helps you fix them. If it passes, the script produces a distributable `.zip` file.
 
 <Callout type="warning">
-To share a skill with your team, commit the skill directory to version control under `.claude/skills/` — anyone who checks out the repo gets the skill automatically. For broader distribution outside a single project, use plugins. Never distribute `.zip` files outside of version control; they can't be audited, versioned, or rolled back easily.
+To share a skill with your team, commit the skill directory to version control under `.claude/skills/` — anyone who checks out the repo gets the skill automatically. For broader distribution outside a single project, use plugins. Prefer version control over distributing raw `.zip` files — version control enables auditing, versioning, and rollback in ways that standalone zip archives do not.
 </Callout>
 
 ### Step 6: Iterate
@@ -130,7 +130,7 @@ Use the skill on real work, note friction points, and ask Claude Code to improve
 
 ## The Frontmatter Description Matters Most
 
-The skill-creator puts special emphasis on the `description` field in frontmatter. This is the **primary triggering mechanism** — it's how Claude decides whether to load your skill at all. The `description` field budget is roughly 100 tokens, and it sits in every conversation as always-on metadata. That budget matters because Claude Code loads skill metadata for all installed skills simultaneously. The budget scales dynamically at 2% of the context window (with a 16,000-character fallback). How many skills fit depends on description length — run `/context` to check whether any skills are being excluded.
+The skill-creator puts special emphasis on the `description` field in frontmatter. This is the **primary triggering mechanism** — it's how Claude decides whether to load your skill at all. Each individual `description` field costs roughly 100 tokens (a rough estimate — actual cost varies by phrasing and model tokenization), and it sits in every conversation as always-on metadata. That per-skill cost accumulates because Claude Code loads skill metadata for all installed skills simultaneously. The aggregate budget for all skill metadata combined scales dynamically at 2% of the context window (with a 16,000-character fallback) — this is the total ceiling across every installed skill's description, not a per-skill limit. How many skills fit within that aggregate ceiling depends on description length — run `/context` to check whether any skills are being excluded.
 
 The skill-creator checks that your description includes:
 
@@ -144,7 +144,7 @@ A great SKILL.md body with a weak description never fires. The description is th
 
 ## What You Don't Need
 
-The skill-creator also enforces what not to include. No `README.md`. No `INSTALLATION_GUIDE.md`. No `CHANGELOG.md`. The skill folder is for an AI agent to read, not for humans. `README.md` and `CHANGELOG.md` are human documentation patterns — Claude doesn't need them. They bloat the skill and confuse the reader, which is another Claude instance. A skill contains only what an AI agent needs to do the job. If you find yourself writing a README, you're writing for a human audience, not for Claude.
+The skill-creator also enforces what not to include. You don't need a `README.md`, `INSTALLATION_GUIDE.md`, or `CHANGELOG.md` — extra files are simply ignored by Claude. The skill folder's primary audience is the AI agent, not human readers. `README.md` and `CHANGELOG.md` are human documentation patterns — Claude doesn't need them, and including them adds noise without benefit. A skill contains only what an AI agent needs to do the job. If you find yourself writing a README, consider whether that content belongs in the skill body or a reference file instead.
 
 ## Putting It All Together
 
@@ -180,7 +180,7 @@ The skill-creator takes the 6-step process from this module and wraps it in an i
     "The description field is the primary triggering mechanism and the most important part of any skill — a great body with a weak description never fires.",
     "Progressive disclosure means three loading levels: metadata always in context, SKILL.md body on trigger, and resources on demand. The skill-creator enforces this separation.",
     "Use disable-model-invocation: true for any skill that produces customer-facing output or requires explicit user intent before running.",
-    "Skill folders contain only what an AI agent needs — no README, no CHANGELOG, no human documentation patterns that bloat context and confuse the reader."
+    "Skill folders are primarily for the AI agent to read — extra files like README or CHANGELOG are simply ignored by Claude, so keep the folder focused on what the agent needs to do the job."
   ]}
 />
 
