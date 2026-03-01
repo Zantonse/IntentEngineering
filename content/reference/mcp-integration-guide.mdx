@@ -1,0 +1,118 @@
+---
+title: "MCP Integration Guide"
+description: "Connecting your SE agent to real tools — CRM, email, call recording, knowledge bases, and integration platforms."
+---
+
+## What MCP Does for SE Agents
+
+MCP (Model Context Protocol) is an open standard for connecting AI applications to external systems. Think of it as USB-C for AI — a standardized interface so your SE agent can access CRM data, send emails, search knowledge bases, and log activities through a single protocol. Without MCP, every integration requires custom scripts. With MCP, the integration is a configured server that exposes tools Claude can use directly.
+
+## Integration Tiers
+
+### Tier 1: Start Here (Production-Ready)
+
+| Integration | Server | Status | SE Workflows |
+|---|---|---|---|
+| Salesforce | Official beta | Production | Pre-call briefing, post-call logging, deal updates, pipeline queries |
+| HubSpot | Official Beta | Beta | Full CRM read/write, contact management, deal tracking |
+| Slack | Official | Production | Internal deal updates, channel search, DM follow-ups |
+| Notion | Official | Production | Search playbooks, pull case studies, create call notes |
+| Google Drive | Official | Stable | Retrieve decks, pricing sheets, templates, ROI calculators |
+| PostgreSQL | Reference | Stable | Query product usage data, customer health scores |
+
+### Tier 2: Add Next
+
+| Integration | Server | Status | SE Workflows |
+|---|---|---|---|
+| Gmail | Community/Zapier | Community | Draft/send follow-ups, inbox search for prospect correspondence (no official MCP server) |
+| Google Calendar | Zapier/Composio | Community | Schedule demos, check availability, create meeting events (via integration platforms) |
+| Fireflies.ai | API/MCP | Beta | Search past call transcripts, extract action items |
+| Jira | Community | Stable | Feature request tracking, onboarding ticket creation |
+| Confluence | Community | Stable | Internal wiki search, product documentation |
+| BigQuery/Snowflake | Composio | Beta | Product telemetry, usage analytics for demos |
+| Google Slides | Composio | Beta | Inject content into presentation templates |
+| LinkedIn | Composio | Limited | Prospect research, company intelligence |
+
+### Tier 3: Via Integration Platforms
+
+| Platform | What It Bridges | SE Value |
+|---|---|---|
+| Zapier MCP | 8,000+ apps including Gong, PandaDoc, DocuSign | Bridges every gap — if an app has a Zapier connector, your agent can use it |
+| Composio | 850+ toolkits with managed auth | Handles OAuth token refresh and credential management across all integrations |
+
+Zapier per-action pricing means high-volume operations can get expensive. Composio charges per-server.
+
+## Configuration Examples
+
+### Subagent with MCP Servers
+
+```yaml
+---
+name: deal-researcher
+description: Research agent with CRM and knowledge base access
+tools: Read, Glob, Grep
+mcpServers:
+  salesforce: { command: "python", args: ["-m", "sf_mcp_server"] }
+  notion: { command: "npx", args: ["notion-mcp-server"] }
+---
+```
+
+### Skill Referencing MCP Tools
+
+In SKILL.md prose, you can reference MCP tools by name to instruct Claude which tools to use:
+
+```markdown
+Use the Salesforce query tool to retrieve deal data.
+Use the Notion search tool to find relevant playbook pages.
+Use the Slack post_message tool to notify the account team.
+```
+
+In hooks and programmatic contexts (like `allowed-tools`), the formal MCP tool identifier format uses double underscores: `mcp__servername__tool_name` (e.g., `mcp__salesforce__query`).
+
+## Dynamic Context Injection (Non-MCP Alternative)
+
+When MCP servers aren't available, use shell scripts in skills:
+
+```yaml
+---
+name: prep-call
+description: Prepare for customer call
+---
+
+## Account: $ARGUMENTS
+### CRM Data
+!`python scripts/crm_fetch.py "$ARGUMENTS"`
+
+### Recent Emails
+!`python scripts/email_search.py --account "$ARGUMENTS" --days 7`
+
+### Call History
+!`python scripts/gong_fetch.py "$ARGUMENTS" --count 3`
+```
+
+These scripts use the respective APIs directly (Salesforce CLI, Gmail API, Gong API). More setup than MCP but works without waiting for MCP server availability.
+
+## The Three-System Foundation
+
+The most effective SE agent has reliable access to three systems:
+
+1. **CRM** (system of record) — Know deal state before every interaction
+2. **Communication** (outbound actions) — Send follow-ups, schedule meetings, post updates
+3. **Knowledge base** (product + competitive intel) — Access docs, playbooks, battlecards on demand
+
+Nail these three with Tier 1 integrations before adding anything else.
+
+## Key Gaps (As of Early 2026)
+
+- **Gong** — No native MCP server. Use Zapier MCP as a bridge for read access.
+- **Chorus** — No MCP, limited API access.
+- **Microsoft 365** — Community-built only, requires Azure AD app registration.
+- **PowerPoint generation** — Experimental. Current best option: generate content, inject into templates via scripts.
+
+## Practical Recommendations
+
+- Start with **one CRM integration** (whichever your team uses)
+- Add **Slack** for internal communication
+- Add **Notion or Google Drive** for knowledge base access
+- Use **Composio** as your managed auth layer if connecting 3+ services
+- Build **custom scripts** for any integration that doesn't have an MCP server yet

@@ -77,7 +77,7 @@ Account context files slot into the CLAUDE.md hierarchy that governs how your ag
 
 **Account level** (`./CLAUDE.md`) is where deal-specific context lives. When you are working in an account directory, this file loads automatically and gives your agent the deal stage, stakeholders, tech stack, and interaction history relevant to that account. It overrides and extends the personal level without replacing it.
 
-**Shared rules** (`.claude/rules/`) are team-managed files that carry product knowledge, messaging guidelines, and competitive positioning that any SE on the team should have access to. Your personal CLAUDE.md can reference these files with an `@import` directive rather than duplicating content.
+**Shared rules** (`.claude/rules/`) are team-managed files committed to the project repository that carry product knowledge, messaging guidelines, and competitive positioning. These load automatically for every session in that project — no manual reference needed. Your CLAUDE.md can also reference other files using the `@path/to/file` syntax (e.g., `See @docs/pricing.md for current pricing`).
 
 The hierarchy is load order, not replacement. All three levels are active simultaneously. The more specific level takes precedence when there is a conflict, which means your account-level context can override a personal default without touching the shared rules your team maintains.
 
@@ -188,9 +188,9 @@ For SEs: your skill library is procedural memory. Your references/ directories a
 
 ## Auto Memory: Claude's Own Notes
 
-Subagents configured with `memory: project` accumulate knowledge across sessions automatically. Claude writes patterns it discovers into a `MEMORY.md` file in your project directory: observations like "The VP of Engineering at this account prefers architecture diagrams over feature-level bullet points" or "Discovery questions framed around compliance risk land better than those framed around performance."
+Claude Code has a built-in auto memory feature that accumulates knowledge across sessions automatically. Claude writes patterns it discovers into memory files at `~/.claude/projects/<project>/memory/` — observations like "The VP of Engineering at this account prefers architecture diagrams over feature-level bullet points" or "Discovery questions framed around compliance risk land better than those framed around performance."
 
-The first 200 lines of `MEMORY.md` inject into every session automatically. This means the signal your agent captures during a live deal becomes context for the next session without any manual intervention on your part.
+Auto memory is enabled by default and requires no special configuration. The memories inject into every session automatically. This means the signal your agent captures during a live deal becomes context for the next session without any manual intervention on your part.
 
 You can seed this file manually with standing observations you already carry, then let the agent extend it. Review it quarterly and prune entries that are no longer accurate. The combination of structured YAML context and agent-authored memory notes gives you both the queryable structure of a database and the flexible pattern recognition of a working notebook.
 
@@ -217,7 +217,7 @@ The next lesson closes out Module 5 with deployment: how to distribute what you 
     "All three levels have equal weight — Claude weighs them based on relevance"
   ]}
   correct={2}
-  explanation="The more specific level takes precedence when there is a conflict. Account-level context (./CLAUDE.md) can override personal defaults (~/.claude/CLAUDE.md) because it is more specific to the current work. But organization policy (managed-policy/CLAUDE.md) overrides everything — child layers specialize but cannot loosen constraints set by parent layers. Personal preferences shape how you work; they cannot override compliance requirements or account-level context."
+  explanation="More specific instructions take precedence over broader ones. Account-level context (./CLAUDE.md) can override personal defaults (~/.claude/CLAUDE.md) because it is more specific to the current work. Enterprise managed policy (configured at the OS level) provides the broadest organizational constraints. The general principle is that each layer can specialize behavior for its scope."
 />
 
 <KeyTakeaways items={[
@@ -225,7 +225,7 @@ The next lesson closes out Module 5 with deployment: how to distribute what you 
   "Every field in the account context file does active work: competing_with loads battlecards automatically, communication_style shapes email tone, tech_stack defaults POC architecture choices.",
   "Three patterns make account context manageable at scale: lazy initialization from CRM, incremental enrichment via agent proposals after calls, and staleness detection with confidence scoring.",
   "The three memory types (procedural in skills, semantic in references/, episodic in account context files) are not interchangeable — investing in all three compounds, and each layer makes the others more valuable.",
-  "Auto memory (MEMORY.md with memory: project) captures learned patterns across sessions automatically, building institutional knowledge about an account without manual intervention."
+  "Auto memory captures learned patterns across sessions automatically (enabled by default), building institutional knowledge about an account without manual intervention."
 ]} />
 
 <SelfAssessment items={[

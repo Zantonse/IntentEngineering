@@ -1,0 +1,220 @@
+---
+title: "SE Skill Library Reference"
+description: "Complete taxonomy of SE skills — 15 skills across 4 tiers with design patterns, naming conventions, and directory structures."
+---
+
+## Skill Taxonomy
+
+### Tier 1: Core Deal Execution
+
+| Skill | Trigger Phrase (excerpt) | Key Contents | References |
+|---|---|---|---|
+| `discovery-prep` | "Prepare for technical discovery calls..." | Account research checklist, 25 discovery questions by role, pain point hypothesis template | question-bank.md, industries.md |
+| `demo-builder` | "Build customized demo scripts..." | Persona-specific narratives, use-case-to-demo mapping, failure recovery | product-features.md, demo-environments.md |
+| `rfp-analyzer` | "Score RFP requirements against product capabilities..." | Coverage scoring (Full/Partial/Planned/Gap), bid/no-bid framework | product-capabilities.md, compliance-certs.md |
+| `poc-manager` | "Plan and track proof of concept engagements..." | POC scoping template, success criteria framework, weekly status format | poc-best-practices.md |
+| `objection-handler` | "Generate evidence-based responses to technical objections..." | Objection response frameworks, evidence linking | competitive/ directory |
+
+**rfp-analyzer scripts:** `rfp_response_analyzer.py`
+
+---
+
+### Tier 2: Technical Content
+
+| Skill | Key Contents |
+|---|---|
+| `solution-architect` | Architecture patterns, integration catalog, ASCII diagram templates |
+| `security-questionnaire` | Pre-approved language per certification, top 50 questions, escalation triggers |
+| `battlecard-builder` | Competitor data, win themes, discovery questions that expose weaknesses |
+| `technical-proposal` | Executive summary template, requirements coverage table, implementation phases |
+
+---
+
+### Tier 3: Deal Intelligence
+
+| Skill | Key Contents |
+|---|---|
+| `account-brief` | Company research, tech stack indicators, stakeholder mapping |
+| `deal-strategy` | MEDDIC/MEDDPICC scoring, stall pattern recognition, next best actions |
+| `win-loss-analysis` | Post-close learning extraction, pattern identification |
+| `customer-handoff` | CS handoff document, use case docs, stakeholder map |
+
+---
+
+### Tier 4: Content and Thought Leadership
+
+| Skill | Key Contents |
+|---|---|
+| `technical-blog` | Thought leadership drafting |
+| `use-case-library` | Customer story adaptation |
+
+---
+
+## Design Patterns Quick Reference
+
+### Pattern 1: Static vs. Dynamic Context
+
+```yaml
+# Static: product knowledge in references/
+See [references/product-capabilities.md]
+
+# Dynamic: account data via injection
+Account context: !`python scripts/crm_fetch.py $ARGUMENTS`
+```
+
+Use static references for stable institutional knowledge (capabilities, certifications, pricing). Use dynamic injection for data that changes per account — CRM records, org charts, deal history.
+
+---
+
+### Pattern 2: Stakeholder-Aware Output
+
+```
+For CTOs: Lead with business outcomes and ROI
+For engineers: Include API examples and data models
+For procurement: Emphasize TCO, contract flexibility
+```
+
+Apply in: `technical-proposal`, `rfp-analyzer`, `demo-builder`, `solution-architect`.
+
+---
+
+### Pattern 3: Calibrated Confidence
+
+| Label | Meaning |
+|---|---|
+| **Full** | Meets requirement without configuration |
+| **Partial** | Met with configuration or third-party integration |
+| **Planned** | On confirmed roadmap with delivery date |
+| **Gap** | Not supported, no current plan |
+
+Apply in: `rfp-analyzer`, `security-questionnaire`, `technical-proposal`.
+
+---
+
+### Pattern 4: Auto-Invocation Control
+
+| Setting | When to Use |
+|---|---|
+| `disable-model-invocation: true` | Customer-facing skills: RFP, proposal, email — require human review before output is sent |
+| Omit or `false` | Background knowledge skills: `objection-handler`, product-knowledge — safe to invoke automatically |
+
+---
+
+### Pattern 5: Context Fork for Research
+
+```yaml
+context: fork
+agent: Explore
+```
+
+Use for deep research skills (`account-brief`, `win-loss-analysis`, `battlecard-builder`). Keeps verbose exploration out of the main context window. Results are summarized and returned to the parent context on completion.
+
+---
+
+## Recommended Directory Structure
+
+```
+~/.claude/skills/
+├── discovery-prep/
+│   ├── SKILL.md
+│   ├── references/
+│   │   ├── question-bank.md
+│   │   └── industries.md
+│   └── scripts/
+│       └── format-questions.sh
+├── demo-builder/
+│   ├── SKILL.md
+│   ├── references/
+│   │   ├── product-features.md
+│   │   └── demo-environments.md
+│   └── assets/
+│       └── demo-script-template.md
+├── rfp-analyzer/
+│   ├── SKILL.md
+│   ├── references/
+│   │   ├── product-capabilities.md
+│   │   └── compliance-certs.md
+│   └── scripts/
+│       └── rfp_response_analyzer.py
+├── poc-manager/
+│   ├── SKILL.md
+│   └── references/
+│       └── poc-best-practices.md
+├── objection-handler/
+│   ├── SKILL.md
+│   └── references/
+│       └── (symlink or copy from .claude/rules/competitive/)
+├── solution-architect/
+│   ├── SKILL.md
+│   └── references/
+│       ├── architecture-patterns.md
+│       └── integration-catalog.md
+├── security-questionnaire/
+│   ├── SKILL.md
+│   └── references/
+│       └── approved-responses.md
+├── battlecard-builder/
+│   ├── SKILL.md
+│   └── references/
+│       └── (symlink or copy from .claude/rules/competitive/)
+├── technical-proposal/
+│   ├── SKILL.md
+│   └── assets/
+│       └── proposal-template.md
+├── account-brief/
+│   ├── SKILL.md
+│   └── scripts/
+│       └── crm_fetch.py
+├── deal-strategy/
+│   ├── SKILL.md
+│   └── references/
+│       └── meddpicc-guide.md
+├── win-loss-analysis/
+│   ├── SKILL.md
+│   └── references/
+│       └── analysis-framework.md
+├── customer-handoff/
+│   ├── SKILL.md
+│   └── assets/
+│       └── handoff-template.md
+├── technical-blog/
+│   ├── SKILL.md
+│   └── assets/
+│       └── post-template.md
+└── use-case-library/
+    ├── SKILL.md
+    └── references/
+        └── customer-stories.md
+
+.claude/rules/                  # Shared across ALL skills
+├── product-capabilities.md
+├── pricing.md
+└── competitive/
+    ├── vs-competitor-a.md
+    └── vs-competitor-b.md
+```
+
+**Rule:** Put content in `.claude/rules/` (project-level, committed to git) when multiple skills need it and your team should share it. Put content in a skill's own `references/` when it is only used by that skill. Note: `~/.claude/rules/` would be personal/per-machine, while `.claude/rules/` is project-level and shared via version control.
+
+---
+
+## Naming Conventions
+
+| Convention | Pattern | Examples |
+|---|---|---|
+| Action skills | Verb-noun, lowercase with hyphens | `rfp-analyzer`, `demo-builder`, `poc-manager` |
+| Knowledge skills | Noun, lowercase with hyphens | `product-knowledge`, `competitive-intel` |
+| Length | 2–3 words max | Avoid `technical-discovery-preparation-tool` |
+| Character limit | 64 characters max on the `name` field | Enforced by Claude Code skill loader |
+
+---
+
+## Priority Order for Building
+
+| Priority | Skill | Rationale |
+|---|---|---|
+| 1 | `discovery-prep` | Highest frequency — runs before every new opportunity |
+| 2 | `rfp-analyzer` | Highest time savings — RFP response is the most time-intensive recurring task |
+| 3 | `battlecard-builder` | Highest competitive impact — win rate effect is immediate and measurable |
+| 4 | `security-questionnaire` | Most repetitive — same questions answered repeatedly with identical approved language |
+| 5 | `demo-builder` | Most customization value — generic demos lose deals that tailored demos win |

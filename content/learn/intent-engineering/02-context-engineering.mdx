@@ -59,7 +59,7 @@ Subagents handle focused tasks with their own fresh context windows, returning c
 
 Each subagent operates independently. Its work does not bloat the parent conversation's context. It receives a specific input, completes a bounded task, and returns a 1,000-2,000 token summary — the output, not the full working history.
 
-Anthropic's multi-agent research system is the clearest example: an Opus orchestrator spawns Sonnet subagents, each exploring a topic in parallel with isolated context. The orchestrator never sees each subagent's full context; it only sees what each subagent reports back.
+Anthropic's multi-agent research system is a clear example: an orchestrator spawns specialized subagents, each exploring a topic in parallel with isolated context. The orchestrator never sees each subagent's full context; it only sees what each subagent reports back.
 
 For SEs: your RFP pipeline uses subagents. One parses requirements from the raw document. Another matches capabilities against those requirements. A third drafts responses for each section. Each operates with clean context focused on its specific task. The orchestrator stitches the outputs together. No single context window tries to hold the entire workload.
 

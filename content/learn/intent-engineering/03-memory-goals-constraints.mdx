@@ -25,7 +25,8 @@ Claude Code's memory hierarchy looks like a file organization system. It is actu
 
 ```yaml
 # Organization layer — enterprise non-negotiables
-managed-policy/CLAUDE.md:
+# (OS-specific path, e.g. /Library/Application Support/ClaudeCode/CLAUDE.md on macOS)
+managed policy:
   "Never expose customer PII in generated output"
   "All API calls must use the approved authentication flow"
 
@@ -53,10 +54,10 @@ Each layer encodes a different scope of intent:
 - **Auto memory**: What Claude has learned from practice. Adaptive context that accumulates as the system operates.
 
 <Callout type="key">
-The relationship between layers is directional. Child layers specialize but cannot loosen constraints set by parent layers. A project CLAUDE.md can narrow what the organization policy permits; it cannot widen it. This is the mechanism that makes delegation safe.
+In Claude Code's default behavior, more specific instructions take precedence over broader ones — a project CLAUDE.md can override personal defaults. However, enterprise managed policy (configured at the OS level) provides organizational constraints that are harder to override. When designing your intent architecture, treat the hierarchy as a narrowing system: each layer should specialize within the scope of the layers above it.
 </Callout>
 
-This is not just a technical constraint — it is the mechanism that makes delegation safe. You can give team members control over their personal layer without worrying that they will inadvertently override compliance requirements.
+This design principle is what makes delegation safe. By structuring your CLAUDE.md files so that child layers specialize rather than contradict parent layers, you can give team members control over their personal layer with confidence that organizational standards remain intact.
 
 ### Three Types of Memory
 
@@ -66,7 +67,7 @@ Memory in intent-engineered systems falls into three categories that behave diff
 
 **Semantic memory** (facts and knowledge) is your references directories, product documentation, and competitive intelligence. It encodes what is true about the domain. Semantic memory loads on demand — pulled in via tools when a workflow needs it.
 
-**Episodic memory** (specific past events) is your call notes, meeting summaries, and session scratchpads. It encodes what happened with specific people and accounts. Episodic memory loads when the current context matches — when you are working on Acme Corp, the Acme Corp call notes become relevant. Subagents configured with `memory: project` extend this further: the subagent accumulates knowledge across sessions, building a persistent record of what it has learned about a project or account rather than starting from scratch on every invocation.
+**Episodic memory** (specific past events) is your call notes, meeting summaries, and session scratchpads. It encodes what happened with specific people and accounts. Episodic memory loads when the current context matches — when you are working on Acme Corp, the Acme Corp call notes become relevant. Claude Code's built-in auto memory feature extends this further: the system accumulates knowledge across sessions, building a persistent record of what it has learned about a project or account rather than starting from scratch on every invocation.
 
 For SEs, this maps directly to how you already work. Your skills library is your procedural memory. Your references directories are your semantic memory. The call notes, account histories, and meeting summaries that accumulate in your CRM and file system are your episodic memory. Intent engineering makes those three layers explicit and loadable rather than things you carry in your head.
 
@@ -81,7 +82,7 @@ The three memory types are not abstract concepts — each maps to specific Claud
 
 **Semantic memory** lives in:
 - `.claude/skills/*/references/` — static domain knowledge per skill
-- `~/.claude/rules/` — shared team knowledge files (product capabilities, competitive positioning)
+- `.claude/rules/` — project-level shared knowledge files committed to git (product capabilities, competitive positioning)
 - Knowledge base MCP connections (Notion, Google Drive) — live semantic retrieval
 
 **Episodic memory** lives in:

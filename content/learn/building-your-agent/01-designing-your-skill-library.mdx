@@ -170,7 +170,7 @@ Skill organization matters more as your library grows. A flat directory of twent
   objection-handler/
   ...
 
-~/.claude/rules/           # Shared knowledge, available to ALL skills automatically
+.claude/rules/             # Project-level shared knowledge (committed to git), loaded automatically
   product-capabilities.md
   pricing.md
   competitor-positioning.md
@@ -202,11 +202,11 @@ In the next lesson, we connect these skills to real data — CRM records, call t
   options={[
     "Embedded in each skill's SKILL.md file so each skill has its own complete copy",
     "In a references/ file inside each skill's directory, loaded on demand",
-    "In ~/.claude/rules/pricing.md, loaded automatically by all skills",
+    "In .claude/rules/pricing.md, loaded automatically by all skills",
     "In ~/.claude/CLAUDE.md so it is always present in every session"
   ]}
   correct={2}
-  explanation="Shared knowledge that multiple skills need belongs in ~/.claude/rules/. Files in rules/ load automatically for every skill without explicit references. When pricing changes, you update one file and every skill picks up the change on the next invocation. Embedding the same information in multiple skill files creates a maintenance problem that compounds with every update."
+  explanation="Shared knowledge that multiple skills need belongs in .claude/rules/. Files in rules/ load automatically for every skill without explicit references. When pricing changes, you update one file and every skill picks up the change on the next invocation. Embedding the same information in multiple skill files creates a maintenance problem that compounds with every update."
 />
 
 <KnowledgeCheck
@@ -224,7 +224,7 @@ In the next lesson, we connect these skills to real data — CRM records, call t
 <KeyTakeaways items={[
   "Build skills in tier order — start with Tier 1 (Core Deal Execution) and ship your first two or three before moving up the taxonomy.",
   "The five design patterns that separate durable skills from abandoned ones are: separate static from dynamic context, stakeholder-aware output, calibrated confidence levels, disable auto-invocation for customer-facing output, and fork context for research skills.",
-  "Product knowledge shared across multiple skills belongs in ~/.claude/rules/ — files there load automatically for every skill, so updates propagate without touching each individual skill.",
+  "Product knowledge shared across multiple skills belongs in .claude/rules/ — files there load automatically for every skill, so updates propagate without touching each individual skill.",
   "The FULL / PARTIAL / PLANNED / GAP capability classification prevents both overcommitting (claiming PLANNED as FULL) and excessive conservatism (refusing to answer).",
   "The intentional checkpoint provided by disable-model-invocation: true on customer-facing skills is not friction — it is the last gate before something reaches a prospect."
 ]} />
@@ -232,6 +232,6 @@ In the next lesson, we connect these skills to real data — CRM records, call t
 <SelfAssessment items={[
   "I can identify which tier a given SE skill belongs to and explain the right order to build them.",
   "I can apply all five design patterns (static/dynamic separation, stakeholder calibration, confidence levels, disable auto-invocation, context forking) when writing a SKILL.md.",
-  "I know the difference between what belongs in references/ versus ~/.claude/rules/ and why the distinction matters for maintenance.",
+  "I know the difference between what belongs in references/ versus .claude/rules/ and why the distinction matters for maintenance.",
   "I can write a capability entry using the FULL / PARTIAL / PLANNED / GAP framework without overcommitting or being unnecessarily conservative."
 ]} />

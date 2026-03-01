@@ -22,8 +22,7 @@ description: This skill should be used when the user asks to "prepare
   discovery questions", "plan a technical discovery call", "generate
   questions for a prospect meeting", or mentions understanding
   customer requirements and technical needs.
-metadata:
-  version: 0.1.0
+version: 0.1.0
 ---
 ```
 
@@ -39,11 +38,7 @@ We'll cover trigger descriptions in detail in the next lesson. For now, know tha
 The `description` field is evaluated before the skill body ever loads. A skill with a perfect workflow but a weak description will never fire. Write the description first, and write it for the phrases your users actually type.
 </Callout>
 
-**`metadata.version`** — Optional but recommended for version tracking. Use semantic versioning (`0.1.0`, `1.0.0`). Note that `version` is not a standard frontmatter field — version information belongs nested under `metadata` (e.g., `metadata.version`). When you update a skill's core workflow, bump the version so you can track what changed.
-
-<Callout type="warning">
-Do not put `version` at the top level of the frontmatter. It belongs nested under `metadata` as `metadata.version`. Top-level `version` is not a recognized field and may cause parsing issues depending on your tooling.
-</Callout>
+**`version`** — Optional but recommended for version tracking. Use semantic versioning (`0.1.0`, `1.0.0`) as a top-level frontmatter field. When you update a skill's core workflow, bump the version so you can track what changed.
 
 <KnowledgeCheck
   question="Which frontmatter field does Claude evaluate first when deciding whether to load a skill?"
@@ -208,7 +203,7 @@ In the next lesson, we'll go deep on trigger descriptions — the single most im
   "The description field is the trigger gate — Claude evaluates it before loading any skill content. A weak description means the skill never fires.",
   "The skill body must use imperative form (commands, not suggestions) and stay under 500 lines / 5,000 tokens.",
   "Large reference material, output scripts, and reusable templates belong in the references/, scripts/, and assets/ directories — not inline in the body.",
-  "Version tracking belongs nested under metadata as metadata.version, not as a top-level frontmatter field."
+  "Version tracking uses a top-level version field in the frontmatter (e.g., version: 0.1.0)."
 ]} />
 
 <SelfAssessment items={[

@@ -125,7 +125,7 @@ The `load_deal_context.py` script checks the current directory path, infers the 
 
 ### PostToolUse — Auto-log activities to CRM
 
-A PostToolUse hook fires after Claude completes a specific tool action. Set `"async": true` so the hook runs in the background without blocking Claude from continuing work. The most useful SE application is auto-logging to CRM whenever Claude writes a file that looks like customer-facing output.
+A PostToolUse hook fires after Claude completes a specific tool action. The most useful SE application is auto-logging to CRM whenever Claude writes a file that looks like customer-facing output. Hook scripts receive tool input and output via stdin as a JSON payload.
 
 ```json
 {
@@ -134,15 +134,14 @@ A PostToolUse hook fires after Claude completes a specific tool action. Set `"as
       {
         "matcher": "Write",
         "type": "command",
-        "command": "python ~/.claude/hooks/crm_activity_log.py $CLAUDE_TOOL_OUTPUT_FILE",
-        "async": true
+        "command": "python ~/.claude/hooks/crm_activity_log.py"
       }
     ]
   }
 }
 ```
 
-The hook script inspects the file path and contents, determines if it looks like customer-facing output (follow-up email, proposal section, RFP response), and logs an activity against the relevant CRM account if it does. CRM logging that used to require a separate manual step happens automatically in the background.
+The hook script reads stdin to get the JSON payload containing `tool_input` and `tool_output`, inspects the file path and contents, determines if it looks like customer-facing output (follow-up email, proposal section, RFP response), and logs an activity against the relevant CRM account if it does. CRM logging that used to require a separate manual step happens automatically.
 
 ### Stop — Validate output before delivery
 

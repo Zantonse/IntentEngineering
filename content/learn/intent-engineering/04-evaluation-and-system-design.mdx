@@ -23,7 +23,7 @@ Traditional software metrics — accuracy, latency, uptime — don't translate c
 
 **Action Completion.** Did the system accomplish all stated goals? If a constraint said to cover all four evaluation categories and the output covers three, that's an incomplete action — even if the three covered sections are excellent. Partial completion is a failure mode, not a partial success.
 
-**Efficiency.** How many tokens, steps, and tool calls did it take? Research documents 50x cost variability between different implementations of identical tasks. If your RFP analysis pipeline consumes 200,000 tokens when a well-designed version of the same pipeline would use 40,000, you have an efficiency problem with real cost implications that compound across every invocation.
+**Efficiency.** How many tokens, steps, and tool calls did it take? Different implementations of identical tasks can vary dramatically in token consumption. If your RFP analysis pipeline consumes 200,000 tokens when a well-designed version of the same pipeline would use 40,000, you have an efficiency problem with real cost implications that compound across every invocation.
 
 **Reasoning Coherence.** Are the decisions internally consistent? Does the system follow through on stated constraints, or does it contradict itself across steps? An orchestrated pipeline that announces it will prioritize security requirements in step two and then ignores them in step five has a coherence failure — the output may look complete but the reasoning isn't sound.
 
