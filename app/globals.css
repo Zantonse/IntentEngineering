@@ -157,3 +157,18 @@ body {
 .dark .card-v2:hover {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+/* Details expand/collapse animation */
+details[open] .details-content {
+  grid-template-rows: 1fr;
+}
+
+.details-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease;
+}
+
+.details-content > div {
+  overflow: hidden;
+}

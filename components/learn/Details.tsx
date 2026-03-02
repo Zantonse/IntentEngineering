@@ -9,7 +9,7 @@ interface DetailsProps {
 
 export function Details({ title, children }: DetailsProps) {
   return (
-    <details className="group my-6 rounded-lg border border-border bg-surface-raised">
+    <details className="group my-6 card-v2">
       <summary className="flex cursor-pointer items-center gap-2 px-5 py-3 text-sm font-semibold text-text-primary select-none">
         <svg
           className="h-4 w-4 shrink-0 text-text-muted transition-transform group-open:rotate-90"
@@ -22,8 +22,10 @@ export function Details({ title, children }: DetailsProps) {
         </svg>
         {title}
       </summary>
-      <div className="border-t border-border px-5 py-4 text-text-secondary leading-7 [&>p:last-child]:mb-0">
-        {children}
+      <div className="details-content">
+        <div className="border-t border-border px-5 py-4 text-text-secondary leading-7 [&>p:last-child]:mb-0">
+          {children}
+        </div>
       </div>
     </details>
   );
