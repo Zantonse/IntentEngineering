@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { MODULE_META, type ModuleSlug } from "@/lib/constants";
 import { getLessonsByModule } from "@/lib/mdx";
@@ -17,6 +18,16 @@ export default async function ModulePage({
 
   return (
     <div>
+      {/* Module banner */}
+      <div className="relative -mx-8 -mt-10 mb-8 h-[150px] overflow-hidden rounded-b-lg">
+        <Image
+          src={`/images/modules/${moduleSlug}-banner.png`}
+          alt=""
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
+      </div>
       <div className="flex items-center gap-3 mb-2">
         <span
           className="h-3 w-3 rounded-full"
@@ -36,7 +47,7 @@ export default async function ModulePage({
           <Link
             key={lesson.slug}
             href={`/learn/${moduleSlug}/${lesson.slug}`}
-            className="block card-gradient-border p-5 hover:bg-surface-overlay transition-colors"
+            className="block card-v2 p-5"
           >
             <div className="flex items-start gap-4">
               <span className="text-sm font-mono text-text-muted mt-0.5">
