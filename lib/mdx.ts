@@ -11,6 +11,7 @@ import { OrchestrationFlowEditor } from "@/components/interactive/OrchestrationF
 import { IntentArchitectDesigner } from "@/components/interactive/IntentArchitectDesigner";
 import { Callout } from "@/components/learn/Callout";
 import { Details } from "@/components/learn/Details";
+import { InteractiveWrapper } from "@/components/learn/InteractiveWrapper";
 import { KeyTakeaways } from "@/components/learn/KeyTakeaways";
 import { GlossaryTerm } from "@/components/learn/GlossaryTerm";
 import { KnowledgeCheck } from "@/components/learn/KnowledgeCheck";
@@ -220,10 +221,18 @@ function getMDXComponents() {
         className: "font-semibold text-text-primary",
         ...props,
       }),
-    SkillAnatomyExplorer,
-    SkillBuilder,
-    OrchestrationFlowEditor,
-    IntentArchitectDesigner,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SkillAnatomyExplorer: (props: any) =>
+      React.createElement(InteractiveWrapper, { texture: "/images/interactive/skill-anatomy.png", children: React.createElement(SkillAnatomyExplorer, props) }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SkillBuilder: (props: any) =>
+      React.createElement(InteractiveWrapper, { texture: "/images/interactive/skill-builder.png", children: React.createElement(SkillBuilder, props) }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    OrchestrationFlowEditor: (props: any) =>
+      React.createElement(InteractiveWrapper, { texture: "/images/interactive/orchestration-flow.png", children: React.createElement(OrchestrationFlowEditor, props) }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    IntentArchitectDesigner: (props: any) =>
+      React.createElement(InteractiveWrapper, { texture: "/images/interactive/intent-architect.png", children: React.createElement(IntentArchitectDesigner, props) }),
     Callout,
     Details,
     KeyTakeaways,
