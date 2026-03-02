@@ -100,21 +100,6 @@ body {
   color: var(--color-text-primary);
 }
 
-/* Blueprint grid background pattern */
-.bg-blueprint {
-  background-image:
-    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
-.dark .bg-blueprint {
-  background-image:
-    linear-gradient(rgba(59, 130, 246, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.06) 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
 /* DEPRECATED: Migrate consumers to card-v2, then remove in Task 23.
    Used by: ModuleCards, learn/[module]/page, learn/page, reference/page, KeyTakeaways */
 .card-gradient-border {
