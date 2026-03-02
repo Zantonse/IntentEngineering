@@ -33,15 +33,29 @@
   --color-mod-intent: #a855f7;
   --color-mod-practice: #ef4444;
 
-  /* Semantic tokens */
-  --color-surface: #ffffff;
-  --color-surface-raised: #f8f9fb;
-  --color-surface-overlay: #f3f5f8;
-  --color-text-primary: #0f1629;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #8b95a9;
-  --color-border: #e4e8ef;
-  --color-border-subtle: #f3f5f8;
+  /* Semantic tokens (light default) */
+  --color-surface: #fafbfc;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #f9fafb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-subtle: #f3f4f6;
+
+  /* Module tints (light backgrounds) */
+  --color-mod-foundations-tint: #eff6ff;
+  --color-mod-building-tint: #f0fdf4;
+  --color-mod-orchestration-tint: #fffbeb;
+  --color-mod-intent-tint: #faf5ff;
+  --color-mod-practice-tint: #fef2f2;
+
+  /* Module dark variants (text on light) */
+  --color-mod-foundations-dark: #2563eb;
+  --color-mod-building-dark: #16a34a;
+  --color-mod-orchestration-dark: #d97706;
+  --color-mod-intent-dark: #9333ea;
+  --color-mod-practice-dark: #dc2626;
 
   /* Font families */
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
@@ -53,14 +67,26 @@
 
 /* Dark mode semantic overrides */
 .dark {
-  --color-surface: #0f1629;
-  --color-surface-raised: #161d35;
-  --color-surface-overlay: #1e2844;
+  --color-surface: #0c0f1a;
+  --color-surface-raised: #151926;
+  --color-surface-overlay: #1e2333;
   --color-text-primary: #e4e8ef;
   --color-text-secondary: #a8b2c4;
   --color-text-muted: #6b7589;
   --color-border: #2a3557;
   --color-border-subtle: #1e2844;
+
+  --color-mod-foundations-tint: rgba(59, 130, 246, 0.08);
+  --color-mod-building-tint: rgba(34, 197, 94, 0.08);
+  --color-mod-orchestration-tint: rgba(245, 158, 11, 0.08);
+  --color-mod-intent-tint: rgba(168, 85, 247, 0.08);
+  --color-mod-practice-tint: rgba(239, 68, 68, 0.08);
+
+  --color-mod-foundations-dark: #60a5fa;
+  --color-mod-building-dark: #4ade80;
+  --color-mod-orchestration-dark: #fbbf24;
+  --color-mod-intent-dark: #c084fc;
+  --color-mod-practice-dark: #f87171;
 }
 
 /* Base styles */
@@ -106,4 +132,19 @@ body {
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
+}
+
+/* v2 card styling */
+.card-v2 {
+  position: relative;
+  border-radius: 12px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.card-v2:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
