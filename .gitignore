@@ -42,3 +42,6 @@ next-env.d.ts
 
 # search index (generated at build time)
 /public/search-index.json
+
+# worktrees
+.worktrees/
