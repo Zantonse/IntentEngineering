@@ -20,7 +20,7 @@ export function KnowledgeCheck({
   const isCorrect = selected === correct;
 
   return (
-    <div className="my-8 rounded-lg border border-border bg-surface-raised p-6">
+    <div className="my-8 card-v2 p-6">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
         <svg
           className="h-4 w-4"
@@ -42,7 +42,7 @@ export function KnowledgeCheck({
       <div className="space-y-2">
         {options.map((option, i) => {
           let optionStyle =
-            "border-border hover:border-electric-500/50 hover:bg-surface-overlay cursor-pointer";
+            "border-border-subtle hover:border-electric-400 hover:bg-electric-500/3 cursor-pointer";
 
           if (answered) {
             if (i === correct) {
