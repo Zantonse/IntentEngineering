@@ -2,6 +2,8 @@ import { TopBar } from "@/components/TopBar";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { LayerDiagram } from "@/components/landing/LayerDiagram";
 import { ModuleCards } from "@/components/landing/ModuleCards";
+import { WhyThisCourse } from "@/components/landing/WhyThisCourse";
+import { Footer } from "@/components/Footer";
 import Image from "next/image";
 
 export default function Home() {
@@ -30,6 +32,8 @@ export default function Home() {
       </section>
 
       <ModuleCards />
+      <WhyThisCourse />
+      <Footer />
     </div>
   );
 }
