@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getReferenceSlugs } from "@/lib/mdx";
 
 const REFERENCE_META: Record<string, { title: string; description: string }> = {
@@ -35,17 +36,14 @@ export default function ReferencePage() {
             description: "",
           };
           return (
-            <Link
-              key={slug}
-              href={`/reference/${slug}`}
-              className="card-gradient-border block p-5 hover:bg-surface-overlay transition-colors"
-            >
-              <h2 className="font-semibold text-text-primary">{meta.title}</h2>
-              {meta.description && (
-                <p className="text-sm text-text-secondary mt-1">
-                  {meta.description}
-                </p>
-              )}
+            <Link key={slug} href={`/reference/${slug}`} className="card-v2 block overflow-hidden">
+              <div className="relative h-32 w-full overflow-hidden">
+                <Image src={`/images/reference/${slug}.png`} alt="" fill className="object-cover" />
+              </div>
+              <div className="p-5">
+                <h2 className="font-semibold text-text-primary">{meta.title}</h2>
+                {meta.description && <p className="text-sm text-text-secondary mt-1">{meta.description}</p>}
+              </div>
             </Link>
           );
         })}
