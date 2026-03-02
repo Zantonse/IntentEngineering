@@ -124,8 +124,8 @@ export function SearchDialog() {
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => setOpen(false)}
       />
-      <div className="relative w-full max-w-xl rounded-xl border border-border bg-surface shadow-2xl">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <div className="relative w-full max-w-xl rounded-xl border border-border-subtle bg-surface shadow-lg">
+        <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
           <svg
             className="h-5 w-5 shrink-0 text-text-muted"
             fill="none"
@@ -148,7 +148,7 @@ export function SearchDialog() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <kbd className="hidden sm:inline-block rounded border border-border px-1.5 py-0.5 text-xs text-text-muted">
+          <kbd className="hidden sm:inline-block bg-surface-overlay rounded px-1.5 py-0.5 text-xs font-mono text-text-muted">
             esc
           </kbd>
         </div>
@@ -214,7 +214,7 @@ export function SearchButton() {
           new KeyboardEvent("keydown", { key: "k", metaKey: true })
         )
       }
-      className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-text-muted hover:text-text-primary hover:border-text-muted transition-colors"
+      className="flex items-center gap-2 rounded-lg border border-border-subtle px-3 py-1.5 text-sm text-text-muted hover:text-text-primary hover:border-text-muted transition-colors"
       aria-label="Search"
     >
       <svg
@@ -231,7 +231,7 @@ export function SearchButton() {
         />
       </svg>
       <span className="hidden sm:inline">Search</span>
-      <kbd className="hidden sm:inline-block rounded border border-border px-1 py-0.5 text-xs">
+      <kbd className="hidden sm:inline-block bg-surface-overlay rounded px-1.5 py-0.5 text-xs font-mono">
         ⌘K
       </kbd>
     </button>
