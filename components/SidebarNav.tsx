@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { MODULE_META, type ModuleSlug } from "@/lib/constants";
 import type { LessonMeta } from "@/lib/mdx";
@@ -25,10 +26,7 @@ export function SidebarNav({ modules }: SidebarNavProps) {
               href={`/learn/${slug}`}
               className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted hover:text-text-primary transition-colors mb-2"
             >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: meta.color }}
-              />
+              <Image src={`/images/sidebar/${slug}.png`} alt="" width={24} height={24} className="rounded" />
               {meta.title}
             </Link>
             <ul className="space-y-0.5 ml-4 border-l border-border pl-3">
@@ -39,11 +37,12 @@ export function SidebarNav({ modules }: SidebarNavProps) {
                   <li key={lesson.slug}>
                     <Link
                       href={href}
-                      className={`block text-sm py-1 transition-colors ${
+                      className={`block text-sm py-1.5 transition-colors ${
                         isActive
-                          ? "text-electric-500 font-medium"
+                          ? "font-medium text-text-primary border-l-2 -ml-[calc(0.75rem+1px)] pl-[calc(0.75rem-1px)]"
                           : "text-text-secondary hover:text-text-primary"
                       }`}
+                      style={isActive ? { borderColor: meta.color } : undefined}
                     >
                       {lesson.frontmatter.title}
                     </Link>

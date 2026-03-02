@@ -13,7 +13,7 @@ export function Sidebar() {
     .filter(({ lessons }) => lessons.length > 0);
 
   return (
-    <aside className="hidden lg:block w-64 shrink-0 border-r border-border overflow-y-auto p-6">
+    <aside className="hidden lg:block w-[280px] shrink-0 border-r border-border-subtle bg-surface overflow-y-auto p-6">
       <SidebarNav modules={modules} />
     </aside>
   );
