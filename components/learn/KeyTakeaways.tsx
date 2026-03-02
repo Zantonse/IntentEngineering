@@ -5,6 +5,8 @@ interface KeyTakeawaysProps {
 }
 
 export function KeyTakeaways({ items }: KeyTakeawaysProps) {
+  if (!items || !Array.isArray(items)) return null;
+
   return (
     <div className="card-v2 my-8 px-6 py-5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-text-muted">

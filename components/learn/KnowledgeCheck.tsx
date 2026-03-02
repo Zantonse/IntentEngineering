@@ -19,6 +19,8 @@ export function KnowledgeCheck({
   const answered = selected !== null;
   const isCorrect = selected === correct;
 
+  if (!options || !Array.isArray(options)) return null;
+
   return (
     <div className="my-8 card-v2 p-6">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted">

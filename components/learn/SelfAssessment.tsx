@@ -28,9 +28,10 @@ function saveCheckedState(key: string, state: boolean[]) {
 }
 
 export function SelfAssessment({ items, lessonKey }: SelfAssessmentProps) {
+  const safeItems = items && Array.isArray(items) ? items : [];
   const [mounted, setMounted] = useState(false);
   const [checked, setChecked] = useState<boolean[]>(
-    new Array(items.length).fill(false)
+    new Array(safeItems.length).fill(false)
   );
 
   const storageKey = useMemo(() => {
@@ -44,9 +45,9 @@ export function SelfAssessment({ items, lessonKey }: SelfAssessmentProps) {
   }, [lessonKey]);
 
   useEffect(() => {
-    setChecked(loadCheckedState(storageKey, items.length));
+    setChecked(loadCheckedState(storageKey, safeItems.length));
     setMounted(true);
-  }, [storageKey, items.length]);
+  }, [storageKey, safeItems.length]);
 
   function toggle(index: number) {
     setChecked((prev) => {
@@ -80,7 +81,7 @@ export function SelfAssessment({ items, lessonKey }: SelfAssessmentProps) {
         </h3>
         {mounted && (
           <span className="text-xs text-text-muted">
-            {checkedCount} of {items.length} confident
+            {checkedCount} of {safeItems.length} confident
           </span>
         )}
       </div>
@@ -89,7 +90,7 @@ export function SelfAssessment({ items, lessonKey }: SelfAssessmentProps) {
       </p>
 
       <ul className="space-y-3">
-        {items.map((item, i) => (
+        {safeItems.map((item, i) => (
           <li key={i} className="flex items-start gap-3">
             <button
               onClick={() => toggle(i)}
