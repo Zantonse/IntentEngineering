@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 
 const LAYERS = [
@@ -51,11 +51,11 @@ export function LayerDiagram() {
           <Link
             key={layer.id}
             href={layer.href}
-            className={`relative rounded-lg border px-6 py-4 text-center transition-all duration-200 ${
+            className={`relative rounded-lg border-2 px-6 py-4 text-center transition-all duration-200 ${
               isHovered
-                ? "scale-105 shadow-lg"
+                ? "shadow-md ring-2"
                 : isInactive
-                  ? "opacity-40"
+                  ? "opacity-50"
                   : ""
             }`}
             style={{
@@ -63,7 +63,10 @@ export function LayerDiagram() {
               borderColor: layer.color,
               backgroundColor: isHovered
                 ? `color-mix(in srgb, ${layer.color} 10%, transparent)`
-                : "var(--color-surface-raised)",
+                : "var(--color-surface)",
+              ...(isHovered && {
+                "--tw-ring-color": `color-mix(in srgb, ${layer.color} 20%, transparent)`,
+              } as React.CSSProperties),
             }}
             onMouseEnter={() => setHoveredLayer(layer.id)}
             onMouseLeave={() => setHoveredLayer(null)}
