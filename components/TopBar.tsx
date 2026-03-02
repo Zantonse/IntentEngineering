@@ -4,8 +4,8 @@ import { SearchDialog, SearchButton } from "./SearchDialog";
 
 export function TopBar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-sm">
-      <div className="flex h-14 items-center justify-between px-6">
+    <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface/90 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between px-8">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-semibold text-text-primary">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-electric-500">
