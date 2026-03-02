@@ -26,9 +26,9 @@ export default function LearnPage() {
             <Link
               key={slug}
               href={hasContent ? `/learn/${slug}` : "#"}
-              className={`card-gradient-border block p-6 ${
-                hasContent ? "hover:bg-surface-overlay" : "opacity-50 cursor-not-allowed"
-              } transition-colors`}
+              className={`card-v2 block p-6 ${
+                hasContent ? "" : "opacity-50 cursor-not-allowed"
+              }`}
             >
               <div className="flex items-start gap-4">
                 <span
