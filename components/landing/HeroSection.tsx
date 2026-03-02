@@ -9,7 +9,7 @@ export function HeroSection() {
         src="/images/hero/hero-bg.png"
         alt=""
         fill
-        className="object-cover object-center"
+        className="object-cover object-center hero-image"
         priority
       />
       {/* Overlay for readability */}

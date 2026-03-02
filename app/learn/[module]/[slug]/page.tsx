@@ -41,7 +41,7 @@ export default async function LessonPage({
           src={`/images/lessons/${moduleSlug}/${slug}.png`}
           alt=""
           fill
-          className="object-cover"
+          className="object-cover lesson-banner"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface" />
       </div>

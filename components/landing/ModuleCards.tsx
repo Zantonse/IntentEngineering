@@ -36,7 +36,7 @@ export function ModuleCards() {
                   src={`/images/modules/${slug}-card.png`}
                   alt=""
                   fill
-                  className="object-cover"
+                  className="object-cover card-image"
                 />
               </div>
               <div className="p-6">

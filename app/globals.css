@@ -158,6 +158,21 @@ details[open] .details-content {
   overflow: hidden;
 }
 
+/* Dark mode image treatments */
+.dark .hero-image {
+  opacity: 0.6;
+  filter: brightness(0.7) saturate(0.9);
+}
+
+.dark .lesson-banner {
+  opacity: 0.5;
+  filter: brightness(0.6);
+}
+
+.dark .card-image {
+  filter: brightness(0.8) saturate(0.85);
+}
+
 /* Code block theme switching */
 [data-theme="dark"] {
   display: none;
