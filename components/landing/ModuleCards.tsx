@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MODULE_META, type ModuleSlug } from "@/lib/constants";
 import { getLessonsByModule } from "@/lib/mdx";
 
@@ -25,25 +26,36 @@ export function ModuleCards() {
             <Link
               key={slug}
               href={hasContent ? `/learn/${slug}` : "#"}
-              className={`card-gradient-border p-6 ${
-                hasContent ? "hover:bg-surface-overlay" : "opacity-50 cursor-not-allowed"
-              } transition-colors`}
+              className={`card-v2 overflow-hidden ${
+                hasContent ? "" : "opacity-50 cursor-not-allowed"
+              }`}
             >
-              <div className="flex items-center gap-3 mb-3">
-                <span
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-                  style={{ backgroundColor: meta.color }}
-                >
-                  {meta.order}
-                </span>
-                <div>
-                  <h3 className="font-semibold text-text-primary">{meta.title}</h3>
-                  <p className="text-xs text-text-muted">{meta.subtitle}</p>
-                </div>
+              {/* Card image header */}
+              <div className="relative h-40 w-full overflow-hidden">
+                <Image
+                  src={`/images/modules/${slug}-card.png`}
+                  alt=""
+                  fill
+                  className="object-cover"
+                />
               </div>
-              <p className="text-sm text-text-secondary">{meta.description}</p>
-              <div className="mt-3 text-xs text-text-muted">
-                {hasContent ? `${lessons.length} lessons` : "Coming soon"}
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <span
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                    style={{ backgroundColor: meta.color }}
+                  >
+                    {meta.order}
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-text-primary">{meta.title}</h3>
+                    <p className="text-xs text-text-muted">{meta.subtitle}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-text-secondary">{meta.description}</p>
+                <div className="mt-3 text-xs text-text-muted">
+                  {hasContent ? `${lessons.length} lessons` : "Coming soon"}
+                </div>
               </div>
             </Link>
           );
