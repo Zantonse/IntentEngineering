@@ -172,3 +172,16 @@ details[open] .details-content {
 .details-content > div {
   overflow: hidden;
 }
+
+/* Code block theme switching */
+[data-theme="dark"] {
+  display: none;
+}
+
+.dark [data-theme="light"] {
+  display: none;
+}
+
+.dark [data-theme="dark"] {
+  display: block;
+}

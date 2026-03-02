@@ -101,7 +101,7 @@ export async function getLesson(moduleSlug: string, lessonSlug: string) {
         rehypePlugins: [
           rehypeSlug,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          [rehypePrettyCode as any, { theme: "github-dark-default", keepBackground: true }],
+          [rehypePrettyCode as any, { theme: { light: "github-light-default", dark: "github-dark-default" }, keepBackground: true }],
         ],
       },
     },
@@ -146,7 +146,7 @@ export async function getReferencePage(slug: string) {
         rehypePlugins: [
           rehypeSlug,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          [rehypePrettyCode as any, { theme: "github-dark-default", keepBackground: true }],
+          [rehypePrettyCode as any, { theme: { light: "github-light-default", dark: "github-dark-default" }, keepBackground: true }],
         ],
       },
     },
