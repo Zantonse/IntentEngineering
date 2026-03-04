@@ -104,6 +104,8 @@ export async function getLesson(moduleSlug: string, lessonSlug: string) {
           [rehypePrettyCode as any, { theme: "github-dark-default", keepBackground: true }],
         ],
       },
+      // Content is authored locally, not from user input — safe to allow expressions
+      blockJS: false,
     },
     components: getMDXComponents(),
   });
@@ -149,6 +151,8 @@ export async function getReferencePage(slug: string) {
           [rehypePrettyCode as any, { theme: "github-dark-default", keepBackground: true }],
         ],
       },
+      // Content is authored locally, not from user input — safe to allow expressions
+      blockJS: false,
     },
     components: getMDXComponents(),
   });
